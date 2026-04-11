@@ -43,3 +43,26 @@ class MovieSyncTest(TestCase):
         self.assertEqual(Movie.objects.count(), 1)
         self.assertEqual(Movie.objects.first().title, "Fight Club")
 
+    # ✅ Test duplicates (no duplicate movies created)
+    def test_no_duplicate_movies(self):
+
+        self.service.sync_movie = lambda x: Movie.objects.get_or_create(
+            tmdb_id=x,
+            defaults={"title": "Test Movie"}
+        )
+
+        self.service.sync_movie(550)
+        self.service.sync_movie(550)
+
+        self.assertEqual(Movie.objects.count(), 1)
+
+    # ✅ Test API failure (empty response)
+    def test_api_failure(self):
+
+        self.service.tmdb = type("", (), {
+            "get_trending_movies": lambda self, page: {}
+        })()
+
+        self.service.sync_trending(pages=1)
+
+        self.assertEqual(Movie.objects.count(), 0)
