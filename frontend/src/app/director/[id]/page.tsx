@@ -8,12 +8,13 @@ import { ArrowLeft, Calendar, MapPin, Film, Star, Users } from "lucide-react";
 import MovieCard, { MovieCardSkeleton } from "@/components/MovieCard";
 import { peopleAPI } from "@/lib/api";
 import { formatDate, posterUrl } from "@/lib/utils";
+import type { Person } from "@/types/movie";
 
 export default function DirectorPage() {
   const params = useParams();
   const personId = Number(params.id);
 
-  const [person, setPerson] = useState<any>(null);
+  const [person, setPerson] = useState<Person | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
