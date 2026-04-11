@@ -127,6 +127,7 @@ class TMDBService:
         return results.get(country, {})
 
 
+
 class MovieSyncService:
     """Syncs TMDB data to local Django models."""
 
@@ -252,7 +253,12 @@ class MovieSyncService:
         """Sync trending movies to local DB."""
         for page in range(1, pages + 1):
             data = self.tmdb.get_trending_movies(page=page)
+
+            print("PAGE:", page)
+            print("DATA:", data)
+
             for movie_data in data.get("results", []):
+                print("MOVIE:", movie_data.get("title"))
                 self.sync_movie(movie_data["id"])
 
 
