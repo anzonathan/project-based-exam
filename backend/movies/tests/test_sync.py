@@ -43,7 +43,7 @@ class MovieSyncTest(TestCase):
         self.assertEqual(Movie.objects.count(), 1)
         self.assertEqual(Movie.objects.first().title, "Fight Club")
 
-    # ✅ Test duplicates (no duplicate movies created)
+    # Test duplicates (no duplicate movies created)
     def test_no_duplicate_movies(self):
 
         self.service.sync_movie = lambda x: Movie.objects.get_or_create(
