@@ -8,6 +8,14 @@ import type {
   User,
   GenrePreference,
   WatchlistItem,
+  Mood,
+  MoodMoviesResponse,
+  PeopleSearchResult,
+  ComparisonData,
+  DashboardStats,
+  BecauseYouWatchedResponse,
+  UserInteraction,
+  TMDBMovieDetail,
 } from "@/types/movie";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -141,7 +149,7 @@ export const moviesAPI = {
   topRated: (page = 1) =>
     apiFetch<PaginatedResponse<MovieCompact>>(`/movies/top-rated/?page=${page}`),
 
-  getDetail: (tmdbId: number) => apiFetch<any>(`/movies/tmdb/${tmdbId}/`),
+  getDetail: (tmdbId: number) => apiFetch<TMDBMovieDetail>(`/movies/tmdb/${tmdbId}/`),
 
   getRecommendations: (movieId: number) =>
     apiFetch<MovieCompact[]>(`/movies/list/${movieId}/recommendations/`),
@@ -152,10 +160,10 @@ export const moviesAPI = {
   getWikipedia: (movieId: number) =>
     apiFetch<{ summary: string; url: string }>(`/movies/list/${movieId}/wikipedia/`),
 
-  getMoods: () => apiFetch<any[]>("/movies/moods/"),
+  getMoods: () => apiFetch<Mood[]>("/movies/moods/"),
 
   getMoodMovies: (slug: string, page = 1) =>
-    apiFetch<any>(`/movies/moods/${slug}/?page=${page}`),
+    apiFetch<MoodMoviesResponse>(`/movies/moods/${slug}/?page=${page}`),
 
   discover: (params: Record<string, string | number>) => {
     const qs = new URLSearchParams();
@@ -166,7 +174,7 @@ export const moviesAPI = {
   },
 
   compare: (id1: number, id2: number) =>
-    apiFetch<{ movies: any[] }>(`/movies/compare/?ids=${id1},${id2}`),
+    apiFetch<ComparisonData>(`/movies/compare/?ids=${id1},${id2}`),
 };
 
 // Genres API
@@ -184,7 +192,7 @@ export const genresAPI = {
 
 export const peopleAPI = {
   search: (query: string) =>
-    apiFetch<any>(`/movies/people/search/?q=${encodeURIComponent(query)}`),
+    apiFetch<PeopleSearchResult>(`/movies/people/search/?q=${encodeURIComponent(query)}`),
 
   getDetail: (id: number) => apiFetch<Person>(`/movies/people/${id}/`),
 
@@ -198,7 +206,7 @@ export const recommendationsAPI = {
     apiFetch<PaginatedResponse<MovieCompact>>(`/recommendations/for-you/?page=${page}`),
 
   becauseYouWatched: () =>
-    apiFetch<Record<string, MovieCompact[]>>("/recommendations/because-you-watched/"),
+    apiFetch<BecauseYouWatchedResponse>("/recommendations/because-you-watched/"),
 
   getPreferences: () =>
     apiFetch<GenrePreference[]>("/recommendations/preferences/"),
@@ -235,5 +243,5 @@ export const recommendationsAPI = {
   removeFromWatchlist: (id: number) =>
     apiFetch(`/recommendations/watchlist/${id}/`, { method: "DELETE" }),
 
-  getDashboard: () => apiFetch<any>("/recommendations/dashboard/"),
+  getDashboard: () => apiFetch<DashboardStats>("/recommendations/dashboard/"),
 };
