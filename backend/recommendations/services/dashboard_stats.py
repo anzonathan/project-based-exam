@@ -27,9 +27,14 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
     """
     Build the full dashboard payload for a user.
 
-    Returns a dict matching the structure expected by GET /recommendations/dashboard/.
+    Args:
+        user: Django auth user owning interactions and watchlist rows.
+        engine: Shared ``RecommendationEngine`` instance; a new one is used if omitted.
 
-    ``engine`` is optional; when omitted a new RecommendationEngine is created.
+    Returns:
+        Dict with keys ``summary``, ``genre_distribution``, ``preference_scores``,
+        ``activity_timeline``, and ``recent_activity`` as returned by
+        ``GET /api/recommendations/dashboard/``.
     """
     eng = engine or RecommendationEngine()
     interactions = UserMovieInteraction.objects.filter(user=user)

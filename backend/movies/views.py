@@ -1,3 +1,10 @@
+"""
+HTTP handlers for movies, genres, people, moods, discovery, and comparison.
+
+Thin views delegate TMDB access to ``TMDBService`` / ``MovieSyncService`` and
+use small helpers for repeated serialization of paginated TMDB payloads.
+"""
+
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
@@ -25,7 +32,16 @@ sync_service = MovieSyncService()
 
 
 def _tmdb_page_payload(data: dict, page: int) -> dict:
-    """Build a standard paginated body from a TMDB list/discover response."""
+    """
+    Serialize TMDB ``results`` for list/discover endpoints.
+
+    Args:
+        data: Parsed TMDB JSON containing ``results`` and optional ``total_pages``.
+        page: Current page number echoed back to the client.
+
+    Returns:
+        Dict with serialized ``results``, ``total_pages``, and ``page``.
+    """
     results = data.get("results", [])
     serializer = TMDBMovieSerializer(results, many=True)
     return {
@@ -36,7 +52,9 @@ def _tmdb_page_payload(data: dict, page: int) -> dict:
 
 
 def _tmdb_recommendation_response(data: dict) -> Response:
-    """Serialize TMDB recommendation/similar `results` array."""
+    """
+    Build a DRF response from a TMDB payload's ``results`` list (recommendations/similar).
+    """
     results = data.get("results", [])
     serializer = TMDBMovieSerializer(results, many=True)
     return Response(serializer.data)

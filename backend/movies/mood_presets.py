@@ -87,7 +87,13 @@ MOOD_MAP: dict[str, dict[str, Any]] = {
 
 
 def mood_discover_params(mood: dict[str, Any], page: int) -> dict[str, Any]:
-    """Translate a mood preset into TMDB discover keyword arguments."""
+    """
+    Translate a mood preset into keyword arguments for ``TMDBService.discover_movies``.
+
+    Args:
+        mood: One entry from ``MOOD_MAP`` (includes genres, optional vote thresholds).
+        page: 1-based TMDB page index.
+    """
     params: dict[str, Any] = {
         "with_genres": mood["genres"],
         "sort_by": mood.get("sort_by", "popularity.desc"),
