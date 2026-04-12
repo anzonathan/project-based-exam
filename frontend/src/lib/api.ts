@@ -51,8 +51,7 @@ export function clearTokens() {
   }
 }
 
-// Fetch Wrappe
-
+/** JSON request helper with bearer auth and refresh-token retry. */
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}

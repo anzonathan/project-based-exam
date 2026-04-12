@@ -13,6 +13,11 @@ from .serializers import (
 )
 from .services.tmdb_service import TMDBService, MovieSyncService, WikipediaService
 from .mood_presets import MOOD_MAP, mood_discover_params, mood_list_payload
+from .constants import (
+    MIN_LOCAL_MOVIES_FOR_GENRE_LIST,
+    COMPARE_MOVIE_SLOT_COUNT,
+    DISCOVER_MIN_VOTE_COUNT_WITH_RATING_FILTER,
+)
 
 logger = logging.getLogger(__name__)
 tmdb = TMDBService()
@@ -92,7 +97,7 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Try local DB first
         local_movies = Movie.objects.filter(genres=genre).order_by("-popularity")
-        if local_movies.count() >= 20:
+        if local_movies.count() >= MIN_LOCAL_MOVIES_FOR_GENRE_LIST:
             paginator = self.paginate_queryset(local_movies)
             serializer = MovieCompactSerializer(paginator, many=True)
             return self.get_paginated_response(serializer.data)
@@ -274,12 +279,10 @@ def discover_filtered(request):
     if yt is not None:
         params["primary_release_date.lte"] = f"{yt}-12-31"
 
-    rating_min, rerr = _optional_float_param(qp, "rating_min")
-    if rerr:
-        return rerr
-    if rating_min is not None:
-        params["vote_average.gte"] = rating_min
-        params["vote_count.gte"] = 50
+    rating_min = request.query_params.get("rating_min")
+    if rating_min:
+        params["vote_average.gte"] = float(rating_min)
+        params["vote_count.gte"] = DISCOVER_MIN_VOTE_COUNT_WITH_RATING_FILTER
 
     runtime_min, rterr = _optional_nonnegative_int_param(qp, "runtime_min")
     if rterr:
@@ -317,7 +320,7 @@ def compare_movies(request):
         return Response({"error": "Provide at least 2 TMDB IDs: ?ids=550,680"}, status=400)
 
     movies = []
-    for tmdb_id in ids[:2]:
+    for tmdb_id in ids[:COMPARE_MOVIE_SLOT_COUNT]:
         data = tmdb.get_movie_details(tmdb_id)
         if data and "id" in data:
             movies.append(data)

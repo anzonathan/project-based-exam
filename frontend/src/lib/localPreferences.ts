@@ -1,7 +1,13 @@
 import type { LocalLikedMovie, LocalWatchlistItem } from "@/types/movie";
 
-const LIKED_STORAGE_KEY = "cq_liked";
-const WATCHLIST_STORAGE_KEY = "cq_watchlist";
+/** Browser localStorage keys for client-only movie lists. */
+export const LOCAL_STORAGE_KEYS = {
+  likedMovies: "cq_liked",
+  watchlist: "cq_watchlist",
+} as const;
+
+const LIKED_STORAGE_KEY = LOCAL_STORAGE_KEYS.likedMovies;
+const WATCHLIST_STORAGE_KEY = LOCAL_STORAGE_KEYS.watchlist;
 
 export function getLikedMovies(): LocalLikedMovie[] {
   if (typeof window === "undefined") return [];

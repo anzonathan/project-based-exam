@@ -22,10 +22,8 @@ class TMDBService:
         self.session = requests.Session()
         self.session.params = {"api_key": self.api_key}
 
-    ### class helper functions
-
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict:
-        """Make Get request to TMDB with caching."""
+        """GET a TMDB endpoint with shared session params and response caching."""
         cache_key = f"tmdb:{endpoint}:{params}"
         cached = cache.get(cache_key)
         if cached:
@@ -44,42 +42,42 @@ class TMDBService:
 
 
     def search_movies(self, query: str, page: int = 1) -> dict:
-        """searching movies by title."""
+        """Search movies by title."""
         return self._get("search/movie", {"query": query, "page": page})
 
     def get_movie_details(self, tmdb_id: int) -> dict:
-        """getting  full movie details with credits, videos, and recommendations."""
+        """Return full movie details including credits, videos, and recommendations."""
         return self._get(
             f"movie/{tmdb_id}",
             {"append_to_response": "credits,videos,recommendations,similar,watch/providers"},
         )
 
     def get_trending_movies(self, time_window: str = "week", page: int = 1) -> dict:
-        """getting  trending movies (day or week)."""
+        """Return trending movies for the given day or week window."""
         return self._get(f"trending/movie/{time_window}", {"page": page})
 
     def get_popular_movies(self, page: int = 1) -> dict:
-        """getting  popular movies."""
+        """Return popular movies."""
         return self._get("movie/popular", {"page": page})
 
     def get_top_rated_movies(self, page: int = 1) -> dict:
-        """getting  top-rated movies."""
+        """Return top-rated movies."""
         return self._get("movie/top_rated", {"page": page})
 
     def get_now_playing(self, page: int = 1) -> dict:
-        """getting  movies currently in theatres."""
+        """Return movies currently in theatres."""
         return self._get("movie/now_playing", {"page": page})
 
     def get_upcoming_movies(self, page: int = 1) -> dict:
-        """getting  upcoming movies."""
+        """Return upcoming movies."""
         return self._get("movie/upcoming", {"page": page})
 
     def get_movie_recommendations(self, tmdb_id: int, page: int = 1) -> dict:
-        """getting  TMDB-powered recommendations for a movie."""
+        """Return TMDB-powered recommendations for a movie."""
         return self._get(f"movie/{tmdb_id}/recommendations", {"page": page})
 
     def get_similar_movies(self, tmdb_id: int, page: int = 1) -> dict:
-        """getting  similar movies."""
+        """Return similar movies."""
         return self._get(f"movie/{tmdb_id}/similar", {"page": page})
 
     def discover_movies(self, **kwargs) -> dict:
@@ -92,7 +90,7 @@ class TMDBService:
 
 
     def get_genres(self) -> list:
-        """getting  all movie genres."""
+        """Return all movie genres."""
         cache_key = "tmdb:genres:movie"
         cached = cache.get(cache_key)
         if cached:
@@ -104,12 +102,12 @@ class TMDBService:
         return genres
 
     def get_movies_by_genre(self, genre_id: int, page: int = 1, sort_by: str = "popularity.desc") -> dict:
-        """getting  movies filtered by genre."""
+        """Return movies for a single genre."""
         return self.discover_movies(with_genres=genre_id, page=page, sort_by=sort_by)
 
 
     def get_person_details(self, person_id: int) -> dict:
-        """getting  person (director/actor) details with movie credits."""
+        """Return person (director/actor) details with movie credits."""
         return self._get(
             f"person/{person_id}",
             {"append_to_response": "movie_credits,external_ids"},
@@ -121,7 +119,7 @@ class TMDBService:
 
 
     def get_watch_providers(self, tmdb_id: int, country: str = "US") -> dict:
-        """getting  watch providers for a movie in a specific country."""
+        """Return watch providers for a movie in a specific country."""
         data = self._get(f"movie/{tmdb_id}/watch/providers")
         results = data.get("results", {})
         return results.get(country, {})
@@ -135,7 +133,7 @@ class MovieSyncService:
         self.tmdb = TMDBService()
 
     def sync_genres(self):
-        """Syncing all genres from TMDB to local DB."""
+        """Sync all genres from TMDB to the local database."""
         from movies.models import Genre
 
         genres = self.tmdb.get_genres()
@@ -147,7 +145,7 @@ class MovieSyncService:
         logger.info(f"Synced {len(genres)} genres")
 
     def sync_movie(self, tmdb_id: int):
-        """Syncing a single movie from TMDB to local DB with full details."""
+        """Sync one movie from TMDB to the local database with full details."""
         from movies.models import Movie, Genre, Person, MovieCast, WatchProvider
 
         data = self.tmdb.get_movie_details(tmdb_id)
@@ -250,7 +248,7 @@ class MovieSyncService:
         return movie
 
     def sync_trending(self, pages: int = 3):
-        """Sync trending movies to local DB."""
+        """Sync trending movies into the local database."""
         for page in range(1, pages + 1):
             data = self.tmdb.get_trending_movies(page=page)
             for movie_data in data.get("results", []):
@@ -265,7 +263,7 @@ class WikipediaService:
 
     @staticmethod
     def get_movie_summary(title: str, year: Optional[int] = None) -> dict:
-        """getting  Wikipedia summary for a movie."""
+        """Return a Wikipedia summary snippet for a movie."""
         if year:
             search_title = f"{title} ({year} film)"
         else:
