@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'false'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS','localhost,127.0.0.1').split(',')
 
@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "movies.apps.MoviesConfig",
     "recommendations.apps.RecommendationsConfig",
     "users.apps.UsersConfig",
+     "drf_yasg",
 ]
 
 MIDDLEWARE = [
