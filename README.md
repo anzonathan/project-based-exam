@@ -44,6 +44,7 @@ Create a `.env` file in the `backend/` directory:
 TMDB_API_KEY=your_tmdb_api_key_here
 DJANGO_SECRET_KEY=your_secret_key_here
 DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
 ```
 
 ## TMDB API

@@ -17,6 +17,69 @@ logger = logging.getLogger(__name__)
 tmdb = TMDBService()
 sync_service = MovieSyncService()
 
+# Helper functions for parsing query parameters with validation and error handling
+
+
+def _positive_int_param(qs, key="page", default=1):
+    """Parse a positive integer from query params; return (value, error_response)."""
+    try:
+        raw = qs.get(key, default)
+        if raw is None or (isinstance(raw, str) and not str(raw).strip()):
+            raw = default
+        v = int(raw)
+        if v < 1:
+            raise ValueError
+        return v, None
+    except (TypeError, ValueError):
+        err = Response(
+            {"detail": f"Invalid '{key}': expected a positive integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        return None, err
+
+
+def _optional_float_param(qs, key):
+    if qs.get(key) in (None, ""):
+        return None, None
+    try:
+        return float(qs.get(key)), None
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{key}': expected a number."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+def _optional_nonnegative_int_param(qs, key):
+    if qs.get(key) in (None, ""):
+        return None, None
+    try:
+        v = int(qs.get(key))
+        if v < 0:
+            raise ValueError
+        return v, None
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{key}': expected a non-negative integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+def _optional_year_param(qs, key):
+    if qs.get(key) in (None, ""):
+        return None, None
+    try:
+        y = int(qs.get(key))
+        if y < 1870 or y > 2100:
+            raise ValueError
+        return y, None
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{key}': expected a year between 1870 and 2100."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 ## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Movie.objects.prefetch_related("genres", "directors").all()
@@ -71,7 +134,9 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
     def movies(self, request, slug=None):
         """GET /api/movies/genres/{slug}/movies/ → movies in this genre."""
         genre = self.get_object()
-        page = int(request.query_params.get("page", 1))
+        page, perr = _positive_int_param(request.query_params, "page", 1)
+        if perr:
+            return perr
         sort = request.query_params.get("sort", "popularity.desc")
 
         # Try local DB first
@@ -122,15 +187,17 @@ class PersonViewSet(viewsets.ReadOnlyModelViewSet):
 
 ## standalone endpoints
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def search_movies(request):
     query = request.query_params.get("q", "").strip()
-    page = int(request.query_params.get("page", 1))
+    page, perr = _positive_int_param(request.query_params, "page", 1)
+    if perr:
+        return perr
 
     if not query:
         return Response(
-            {"error": "Query parameter 'q' is required"},
+            {"detail": "Query parameter 'q' is required."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -147,11 +214,18 @@ def search_movies(request):
     })
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def trending_movies(request):
     window = request.query_params.get("window", "week")
-    page = int(request.query_params.get("page", 1))
+    if window not in ("day", "week"):
+        return Response(
+            {"detail": "Invalid 'window': use 'day' or 'week'."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    page, perr = _positive_int_param(request.query_params, "page", 1)
+    if perr:
+        return perr
 
     data = tmdb.get_trending_movies(time_window=window, page=page)
     results = data.get("results", [])
@@ -167,7 +241,9 @@ def trending_movies(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def now_playing(request):
-    p = int(request.query_params.get("page", 1))
+    p, perr = _positive_int_param(request.query_params, "page", 1)
+    if perr:
+        return perr
     d = tmdb.get_now_playing(page=p)
     r = d.get("results", [])
     s = TMDBMovieSerializer(r, many=True)
@@ -178,7 +254,9 @@ def now_playing(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_rated(request):
-    p = int(request.query_params.get("page", 1))
+    p, perr = _positive_int_param(request.query_params, "page", 1)
+    if perr:
+        return perr
     d = tmdb.get_top_rated_movies(page=p)
     r = d.get("results", [])
     s = TMDBMovieSerializer(r, many=True)
@@ -214,7 +292,6 @@ def search_people(request):
 
     data = tmdb.search_people(query)
     return Response(data)
-
 
 
 MOOD_MAP = {
@@ -314,7 +391,9 @@ def mood_movies(request, mood_slug):
     if not mood:
         return Response({"error": "Unknown mood"}, status=404)
 
-    page = int(request.query_params.get("page", 1))
+    page, perr = _positive_int_param(request.query_params, "page", 1)
+    if perr:
+        return perr
     params = {
         "with_genres": mood["genres"],
         "sort_by": mood.get("sort_by", "popularity.desc"),
@@ -342,37 +421,50 @@ def mood_movies(request, mood_slug):
 @permission_classes([AllowAny])
 def discover_filtered(request):
     params = {}
-    page = int(request.query_params.get("page", 1))
+    qp = request.query_params
+    page, perr = _positive_int_param(qp, "page", 1)
+    if perr:
+        return perr
     params["page"] = page
 
-    genre = request.query_params.get("genre")
+    genre = qp.get("genre")
     if genre:
         params["with_genres"] = genre
 
-    year_from = request.query_params.get("year_from")
-    year_to = request.query_params.get("year_to")
-    if year_from:
-        params["primary_release_date.gte"] = f"{year_from}-01-01"
-    if year_to:
-        params["primary_release_date.lte"] = f"{year_to}-12-31"
+    yf, yerr = _optional_year_param(qp, "year_from")
+    if yerr:
+        return yerr
+    yt, yerr = _optional_year_param(qp, "year_to")
+    if yerr:
+        return yerr
+    if yf is not None:
+        params["primary_release_date.gte"] = f"{yf}-01-01"
+    if yt is not None:
+        params["primary_release_date.lte"] = f"{yt}-12-31"
 
-    rating_min = request.query_params.get("rating_min")
-    if rating_min:
-        params["vote_average.gte"] = float(rating_min)
-        params["vote_count.gte"] = 50 
+    rating_min, rerr = _optional_float_param(qp, "rating_min")
+    if rerr:
+        return rerr
+    if rating_min is not None:
+        params["vote_average.gte"] = rating_min
+        params["vote_count.gte"] = 50
 
-    runtime_min = request.query_params.get("runtime_min")
-    runtime_max = request.query_params.get("runtime_max")
-    if runtime_min:
-        params["with_runtime.gte"] = int(runtime_min)
-    if runtime_max:
-        params["with_runtime.lte"] = int(runtime_max)
+    runtime_min, rterr = _optional_nonnegative_int_param(qp, "runtime_min")
+    if rterr:
+        return rterr
+    runtime_max, rterr = _optional_nonnegative_int_param(qp, "runtime_max")
+    if rterr:
+        return rterr
+    if runtime_min is not None:
+        params["with_runtime.gte"] = runtime_min
+    if runtime_max is not None:
+        params["with_runtime.lte"] = runtime_max
 
-    language = request.query_params.get("language")
+    language = qp.get("language")
     if language:
         params["with_original_language"] = language
 
-    sort = request.query_params.get("sort", "popularity.desc")
+    sort = qp.get("sort", "popularity.desc")
     params["sort_by"] = sort
 
     data = tmdb.discover_movies(**params)
