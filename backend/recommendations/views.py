@@ -1,3 +1,10 @@
+"""
+REST endpoints for personalized recommendations, interactions, and watchlist.
+
+Business logic for the dashboard summary lives in
+``recommendations.services.dashboard_stats``; this module wires it to DRF.
+"""
+
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action

@@ -9,6 +9,7 @@ export const LOCAL_STORAGE_KEYS = {
 const LIKED_STORAGE_KEY = LOCAL_STORAGE_KEYS.likedMovies;
 const WATCHLIST_STORAGE_KEY = LOCAL_STORAGE_KEYS.watchlist;
 
+/** Read parsed liked/disliked entries from localStorage (empty array on server or parse errors). */
 export function getLikedMovies(): LocalLikedMovie[] {
   if (typeof window === "undefined") return [];
   try {
@@ -18,11 +19,13 @@ export function getLikedMovies(): LocalLikedMovie[] {
   }
 }
 
+/** Persist the full liked/disliked list under ``LOCAL_STORAGE_KEYS.likedMovies``. */
 export function saveLikedMovies(movies: LocalLikedMovie[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(movies));
 }
 
+/** Read parsed local watchlist items from localStorage. */
 export function getWatchlist(): LocalWatchlistItem[] {
   if (typeof window === "undefined") return [];
   try {
@@ -32,6 +35,7 @@ export function getWatchlist(): LocalWatchlistItem[] {
   }
 }
 
+/** Persist the full local watchlist under ``LOCAL_STORAGE_KEYS.watchlist``. */
 export function saveWatchlist(movies: LocalWatchlistItem[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(movies));
