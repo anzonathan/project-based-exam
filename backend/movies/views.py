@@ -12,6 +12,7 @@ from .serializers import (
     TMDBMovieSerializer,
 )
 from .services.tmdb_service import TMDBService, MovieSyncService, WikipediaService
+from .mood_presets import MOOD_MAP, mood_discover_params, mood_list_payload
 
 logger = logging.getLogger(__name__)
 tmdb = TMDBService()
@@ -210,94 +211,10 @@ def search_people(request):
 
 
 
-MOOD_MAP = {
-    "cozy-night": {
-        "label": "Cozy Night In",
-        "description": "Warm, comforting films perfect for a relaxed evening",
-        "genres": "35,10749,16",  # Comedy, Romance, Animation
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 200,
-        "vote_average_gte": 7.0,
-    },
-    "adrenaline": {
-        "label": "Adrenaline Rush",
-        "description": "Heart-pumping action and intense thrills",
-        "genres": "28,53,80",  # Action, Thriller, Crime
-        "sort_by": "popularity.desc",
-        "vote_count_gte": 300,
-    },
-    "date-night": {
-        "label": "Date Night",
-        "description": "Romantic and charming films to share with someone special",
-        "genres": "10749,35,18",  # Romance, Comedy, Drama
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 150,
-        "vote_average_gte": 6.5,
-    },
-    "mind-bender": {
-        "label": "Mind Bender",
-        "description": "Thought-provoking stories that twist your perception",
-        "genres": "878,9648,53",  # Sci-Fi, Mystery, Thriller
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 200,
-        "vote_average_gte": 7.0,
-    },
-    "feel-good": {
-        "label": "Feel Good",
-        "description": "Uplifting stories that leave you smiling",
-        "genres": "35,10751,16",  # Comedy, Family, Animation
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 150,
-        "vote_average_gte": 7.0,
-    },
-    "edge-of-seat": {
-        "label": "Edge of Your Seat",
-        "description": "Suspenseful films that keep you guessing",
-        "genres": "53,9648,27",  # Thriller, Mystery, Horror
-        "sort_by": "popularity.desc",
-        "vote_count_gte": 200,
-    },
-    "epic-adventure": {
-        "label": "Epic Adventure",
-        "description": "Grand journeys and sweeping tales of heroism",
-        "genres": "12,14,878",  # Adventure, Fantasy, Sci-Fi
-        "sort_by": "popularity.desc",
-        "vote_count_gte": 300,
-    },
-    "cry-it-out": {
-        "label": "Cry It Out",
-        "description": "Emotional dramas that hit you right in the feels",
-        "genres": "18,10749,10402",  # Drama, Romance, Music
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 200,
-        "vote_average_gte": 7.5,
-    },
-    "family-fun": {
-        "label": "Family Fun",
-        "description": "Movies the whole family can enjoy together",
-        "genres": "16,10751,12",  # Animation, Family, Adventure
-        "sort_by": "popularity.desc",
-        "vote_count_gte": 200,
-    },
-    "documentary-deep-dive": {
-        "label": "Documentary Deep Dive",
-        "description": "Real stories that expand your worldview",
-        "genres": "99",  # Documentary
-        "sort_by": "vote_average.desc",
-        "vote_count_gte": 100,
-        "vote_average_gte": 7.0,
-    },
-}
-
-
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def mood_list(request):
-    moods = [
-        {"slug": slug, "label": m["label"], "description": m["description"]}
-        for slug, m in MOOD_MAP.items()
-    ]
-    return Response(moods)
+    return Response(mood_list_payload())
 
 
 @api_view(["GET"])
@@ -308,15 +225,7 @@ def mood_movies(request, mood_slug):
         return Response({"error": "Unknown mood"}, status=404)
 
     page = int(request.query_params.get("page", 1))
-    params = {
-        "with_genres": mood["genres"],
-        "sort_by": mood.get("sort_by", "popularity.desc"),
-        "page": page,
-    }
-    if "vote_count_gte" in mood:
-        params["vote_count.gte"] = mood["vote_count_gte"]
-    if "vote_average_gte" in mood:
-        params["vote_average.gte"] = mood["vote_average_gte"]
+    params = mood_discover_params(mood, page)
 
     data = tmdb.discover_movies(**params)
     body = _tmdb_page_payload(data, page)
