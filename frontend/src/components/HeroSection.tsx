@@ -5,10 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Play, Info, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { backdropUrl, posterUrl } from "@/lib/utils";
-import type { MovieCompact } from "@/types/movie";
+import type { MovieCompact, PaginatedResponse } from "@/types/movie";
 
 interface HeroSectionProps {
-  movies: MovieCompact[];
+  movies: PaginatedResponse<MovieCompact> | null;
 }
 
 const SLIDE_DURATION = 3000; 
@@ -18,7 +18,7 @@ export default function HeroSection({ movies }: HeroSectionProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [progressKey, setProgressKey] = useState(0);
 
-  const heroMovies = movies.slice(0, 6);
+  const heroMovies = Array.isArray(movies) ? movies.slice(0, 6) : movies?.results?.slice(0, 6) || [];
 
   const goTo = useCallback(
     (index: number) => {

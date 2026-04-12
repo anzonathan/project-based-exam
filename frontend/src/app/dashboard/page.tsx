@@ -8,10 +8,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { recommendationsAPI } from "@/lib/api";
+import type { DashboardStats, DashboardSummary, GenreDistribution, PreferenceScore, ActivityEntry, UserInteraction } from "@/types/movie";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,13 +74,22 @@ export default function DashboardPage() {
     );
   }
 
-  const summary = stats?.summary || {};
-  const genreDist = stats?.genre_distribution || [];
-  const prefScores = stats?.preference_scores || [];
-  const timeline = stats?.activity_timeline || [];
-  const recent = stats?.recent_activity || [];
-  const maxGenreCount = Math.max(...genreDist.map((g: any) => g.count), 1);
-  const maxPrefWeight = Math.max(...prefScores.map((p: any) => p.weight), 1);
+  const summary: DashboardSummary = stats?.summary || {
+    total_interactions: 0,
+    likes: 0,
+    dislikes: 0,
+    watched: 0,
+    searches: 0,
+    watchlist_total: 0,
+    watchlist_watched: 0,
+    average_rating: null,
+  };
+  const genreDist: GenreDistribution[] = stats?.genre_distribution || [];
+  const prefScores: PreferenceScore[] = stats?.preference_scores || [];
+  const timeline: ActivityEntry[] = stats?.activity_timeline || [];
+  const recent: UserInteraction[] = stats?.recent_activity || [];
+  const maxGenreCount = Math.max(...genreDist.map((g) => g.count), 1);
+  const maxPrefWeight = Math.max(...prefScores.map((p) => p.weight), 1);
 
   const statCards = [
     { label: "Liked", value: summary.likes || 0, icon: Heart, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-600/5" },

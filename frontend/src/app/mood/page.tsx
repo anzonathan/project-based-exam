@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import MovieCard, { MovieCardSkeleton } from "@/components/MovieCard";
 import { moviesAPI } from "@/lib/api";
-import type { MovieCompact } from "@/types/movie";
+import type { MovieCompact, Mood } from "@/types/movie";
 
 const MOODS = [
   { slug: "cozy-night", label: "Cozy Night In", icon: Heart, color: "from-pink-500/15 to-rose-600/15", iconColor: "text-pink-400", desc: "Warm & comforting" },
@@ -30,7 +30,7 @@ function MoodContent() {
   const activeMood = searchParams.get("mood") || "";
 
   const [movies, setMovies] = useState<MovieCompact[]>([]);
-  const [moodInfo, setMoodInfo] = useState<any>(null);
+  const [moodInfo, setMoodInfo] = useState<Mood | null>(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

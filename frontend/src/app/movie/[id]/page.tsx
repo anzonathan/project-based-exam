@@ -16,9 +16,9 @@ import {
   posterUrl, backdropUrl, formatRuntime, formatCurrency,
   formatDate, ratingColor,
 } from "@/lib/utils";
-import type { MovieCompact } from "@/types/movie";
+import type { MovieCompact, MovieDetail, LocalLikedMovie, LocalWatchlistItem, TMDBMovieDetail } from "@/types/movie";
 
-function getLikedMovies(): any[] {
+function getLikedMovies(): LocalLikedMovie[] {
   if (typeof window === "undefined") return [];
   try {
     return JSON.parse(localStorage.getItem("cq_liked") || "[]");
@@ -27,12 +27,12 @@ function getLikedMovies(): any[] {
   }
 }
 
-function saveLikedMovies(movies: any[]) {
+function saveLikedMovies(movies: LocalLikedMovie[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem("cq_liked", JSON.stringify(movies));
 }
 
-function getWatchlist(): any[] {
+function getWatchlist(): LocalWatchlistItem[] {
   if (typeof window === "undefined") return [];
   try {
     return JSON.parse(localStorage.getItem("cq_watchlist") || "[]");
@@ -41,7 +41,7 @@ function getWatchlist(): any[] {
   }
 }
 
-function saveWatchlist(movies: any[]) {
+function saveWatchlist(movies: LocalWatchlistItem[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem("cq_watchlist", JSON.stringify(movies));
 }
@@ -50,7 +50,7 @@ export default function MovieDetailPage() {
   const params = useParams();
   const tmdbId = Number(params.id);
 
-  const [movie, setMovie] = useState<any>(null);
+  const [movie, setMovie] = useState<TMDBMovieDetail | null>(null);
   const [recommendations, setRecommendations] = useState<MovieCompact[]>([]);
   const [similarMovies, setSimilarMovies] = useState<MovieCompact[]>([]);
   const [likedRecs, setLikedRecs] = useState<MovieCompact[]>([]);
@@ -67,11 +67,11 @@ export default function MovieDetailPage() {
     if (!tmdbId) return;
     const liked = getLikedMovies();
     const watchlist = getWatchlist();
-    const likedEntry = liked.find((m: any) => m.id === tmdbId);
+    const likedEntry = liked.find((m) => m.id === tmdbId);
     setIsLiked(likedEntry?.type === "like");
     setIsDisliked(likedEntry?.type === "dislike");
-    setIsBookmarked(watchlist.some((m: any) => m.id === tmdbId));
-    setLikeCount(liked.filter((m: any) => m.type === "like").length);
+    setIsBookmarked(watchlist.some((m) => m.id === tmdbId));
+    setLikeCount(liked.filter((m) => m.type === "like").length);
   }, [tmdbId]);
 
   // Fetching movie data plus recommendations
@@ -126,7 +126,7 @@ export default function MovieDetailPage() {
   // Like / Dislike / Bookmark handlers
   const handleLike = useCallback(() => {
     const liked = getLikedMovies();
-    const filtered = liked.filter((m: any) => m.id !== tmdbId);
+    const filtered = liked.filter((m) => m.id !== tmdbId);
 
     if (isLiked) {
       // Unlike
@@ -135,15 +135,15 @@ export default function MovieDetailPage() {
       setLikeCount((c) => c - 1);
     } else {
       // Like
-      filtered.push({
+      const newLike: LocalLikedMovie = {
         id: tmdbId,
         title: movie?.title || "",
-        poster_path: movie?.poster_path || "",
+        poster_url: movie?.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "",
         type: "like",
-        genres: (movie?.genres || []).map((g: any) => g.id),
+        genres: (movie?.genres || []).map((g) => g.id),
         timestamp: Date.now(),
-      });
-      saveLikedMovies(filtered);
+      };
+      saveLikedMovies([...filtered, newLike]);
       setIsLiked(true);
       setIsDisliked(false);
       setLikeCount((c) => c + 1);
@@ -152,21 +152,21 @@ export default function MovieDetailPage() {
 
   const handleDislike = useCallback(() => {
     const liked = getLikedMovies();
-    const filtered = liked.filter((m: any) => m.id !== tmdbId);
+    const filtered = liked.filter((m) => m.id !== tmdbId);
 
     if (isDisliked) {
       saveLikedMovies(filtered);
       setIsDisliked(false);
     } else {
-      filtered.push({
+      const newDislike: LocalLikedMovie = {
         id: tmdbId,
         title: movie?.title || "",
-        poster_path: movie?.poster_path || "",
+        poster_url: movie?.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "",
         type: "dislike",
-        genres: (movie?.genres || []).map((g: any) => g.id),
+        genres: (movie?.genres || []).map((g) => g.id),
         timestamp: Date.now(),
-      });
-      saveLikedMovies(filtered);
+      };
+      saveLikedMovies([...filtered, newDislike]);
       setIsDisliked(true);
       setIsLiked(false);
     }
@@ -176,16 +176,16 @@ export default function MovieDetailPage() {
     const watchlist = getWatchlist();
 
     if (isBookmarked) {
-      saveWatchlist(watchlist.filter((m: any) => m.id !== tmdbId));
+      saveWatchlist(watchlist.filter((m) => m.id !== tmdbId));
       setIsBookmarked(false);
     } else {
-      watchlist.push({
+      const newBookmark: LocalWatchlistItem = {
         id: tmdbId,
         title: movie?.title || "",
-        poster_path: movie?.poster_path || "",
+        poster_url: movie?.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : "",
         timestamp: Date.now(),
-      });
-      saveWatchlist(watchlist);
+      };
+      saveWatchlist([...watchlist, newBookmark]);
       setIsBookmarked(true);
     }
   }, [tmdbId, isBookmarked, movie]);
@@ -227,17 +227,17 @@ export default function MovieDetailPage() {
   const revenue = movie.revenue || 0;
   const homepage = movie.homepage || "";
   const genres = movie.genres || [];
-  const bgUrl = backdropUrl(movie.backdrop_path);
-  const imgUrl = posterUrl(movie.poster_path);
+  const bgUrl = backdropUrl(movie?.backdrop_path);
+  const imgUrl = posterUrl(movie?.poster_path);
 
-  const credits = movie.credits || {};
+  const credits = movie?.credits || { cast: [], crew: [] };
   const cast = (credits.cast || []).slice(0, 10);
-  const directors = (credits.crew || []).filter((c: any) => c.job === "Director");
+  const directors = (credits.crew || []).filter((c) => c.job === "Director");
 
-  const videos = movie.videos?.results || [];
-  const trailer = videos.find((v: any) => v.site === "YouTube" && v.type === "Trailer");
+  const videos = movie?.videos?.results || [];
+  const trailer = videos.find((v) => v.site === "YouTube" && v.type === "Trailer");
 
-  const providers = movie["watch/providers"]?.results?.US || {};
+  const providers = movie?.["watch/providers"]?.results?.US || {};
   const streamProviders = providers.flatrate || [];
   const rentProviders = providers.rent || [];
   const buyProviders = providers.buy || [];

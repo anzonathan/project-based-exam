@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight, Star, Clock, Film } from "lucide-react";
 import MovieCard, { MovieCardSkeleton } from "@/components/MovieCard";
-import type { MovieCompact } from "@/types/movie";
+import type { MovieCompact, PaginatedResponse } from "@/types/movie";
 
 function formatMovieRuntime(minutes: number | null): string {
   if (!minutes) return "";
@@ -17,7 +17,7 @@ interface MovieCarouselProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  movies: MovieCompact[];
+  movies: PaginatedResponse<MovieCompact> | MovieCompact[] | null;
   loading?: boolean;
   href?: string;
 }
@@ -96,7 +96,7 @@ export default function MovieCarousel({
             ? Array.from({ length: 8 }).map((_, i) => (
                 <MovieCardSkeleton key={i} />
               ))
-            : movies.map((movie, i) => (
+            : (Array.isArray(movies) ? movies : movies?.results || []).map((movie, i) => (
                 <MovieCard
                   key={movie.id || movie.tmdb_id}
                   movie={movie}
