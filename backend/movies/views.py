@@ -17,6 +17,25 @@ logger = logging.getLogger(__name__)
 tmdb = TMDBService()
 sync_service = MovieSyncService()
 
+
+def _tmdb_page_payload(data: dict, page: int) -> dict:
+    """Build a standard paginated body from a TMDB list/discover response."""
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return {
+        "results": serializer.data,
+        "total_pages": data.get("total_pages", 1),
+        "page": page,
+    }
+
+
+def _tmdb_recommendation_response(data: dict) -> Response:
+    """Serialize TMDB recommendation/similar `results` array."""
+    results = data.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return Response(serializer.data)
+
+
 ## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Movie.objects.prefetch_related("genres", "directors").all()
@@ -32,18 +51,12 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"])
     def recommendations(self, request, pk=None):
         movie = self.get_object()
-        data = tmdb.get_movie_recommendations(movie.tmdb_id)
-        results = data.get("results", [])
-        serializer = TMDBMovieSerializer(results, many=True)
-        return Response(serializer.data)
+        return _tmdb_recommendation_response(tmdb.get_movie_recommendations(movie.tmdb_id))
 
     @action(detail=True, methods=["get"])
     def similar(self, request, pk=None):
         movie = self.get_object()
-        data = tmdb.get_similar_movies(movie.tmdb_id)
-        results = data.get("results", [])
-        serializer = TMDBMovieSerializer(results, many=True)
-        return Response(serializer.data)
+        return _tmdb_recommendation_response(tmdb.get_similar_movies(movie.tmdb_id))
 
     @action(detail=True, methods=["get"])
     def wikipedia(self, request, pk=None):
@@ -83,14 +96,9 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Fallback to TMDB API
         data = tmdb.get_movies_by_genre(genre.tmdb_id, page=page, sort_by=sort)
-        results = data.get("results", [])
-        serializer = TMDBMovieSerializer(results, many=True)
-        return Response({
-            "results": serializer.data,
-            "total_pages": data.get("total_pages", 1),
-            "total_results": data.get("total_results", 0),
-            "page": page,
-        })
+        body = _tmdb_page_payload(data, page)
+        body["total_results"] = data.get("total_results", 0)
+        return Response(body)
 
 
 ## Person ViewSet
@@ -135,16 +143,10 @@ def search_movies(request):
         )
 
     data = tmdb.search_movies(query, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "total_results": data.get("total_results", 0),
-        "page": page,
-        "query": query,
-    })
+    body = _tmdb_page_payload(data, page)
+    body["total_results"] = data.get("total_results", 0)
+    body["query"] = query
+    return Response(body)
 
 
 @api_view(["POST"])
@@ -154,36 +156,27 @@ def trending_movies(request):
     page = int(request.query_params.get("page", 1))
 
     data = tmdb.get_trending_movies(time_window=window, page=page)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "page": page,
-    })
+    return Response(_tmdb_page_payload(data, page))
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def now_playing(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_now_playing(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    page = int(request.query_params.get("page", 1))
+    payload = tmdb.get_now_playing(page=page)
+    results = payload.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return Response({"results": serializer.data, "page": page})
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_rated(request):
-    p = int(request.query_params.get("page", 1))
-    d = tmdb.get_top_rated_movies(page=p)
-    r = d.get("results", [])
-    s = TMDBMovieSerializer(r, many=True)
-    x = {"results": s.data, "page": p}
-    return Response(x)
+    page = int(request.query_params.get("page", 1))
+    payload = tmdb.get_top_rated_movies(page=page)
+    results = payload.get("results", [])
+    serializer = TMDBMovieSerializer(results, many=True)
+    return Response({"results": serializer.data, "page": page})
 
 
 @api_view(["GET"])
@@ -326,15 +319,13 @@ def mood_movies(request, mood_slug):
         params["vote_average.gte"] = mood["vote_average_gte"]
 
     data = tmdb.discover_movies(**params)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "mood": {"slug": mood_slug, "label": mood["label"], "description": mood["description"]},
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "page": page,
-    })
+    body = _tmdb_page_payload(data, page)
+    body["mood"] = {
+        "slug": mood_slug,
+        "label": mood["label"],
+        "description": mood["description"],
+    }
+    return Response(body)
 
 
 ### advanced discover / filters
@@ -376,15 +367,9 @@ def discover_filtered(request):
     params["sort_by"] = sort
 
     data = tmdb.discover_movies(**params)
-    results = data.get("results", [])
-    serializer = TMDBMovieSerializer(results, many=True)
-
-    return Response({
-        "results": serializer.data,
-        "total_pages": data.get("total_pages", 1),
-        "total_results": data.get("total_results", 0),
-        "page": page,
-    })
+    body = _tmdb_page_payload(data, page)
+    body["total_results"] = data.get("total_results", 0)
+    return Response(body)
 
 
 ## movie comparison
@@ -408,24 +393,3 @@ def compare_movies(request):
         return Response({"error": "Could not fetch both movies"}, status=404)
 
     return Response({"movies": movies})
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def compare_two_movies(request):
-    id_string = request.query_params.get("ids", "")
-    movie_ids = [int(i.strip()) for i in id_string.split(",") if i.strip().isdigit()]
-
-    if len(movie_ids) < 2:
-        return Response({"error": "Provide at least 2 TMDB IDs: ?ids=550,680"}, status=400)
-
-    movie_list = []
-    for tid in movie_ids[:2]:
-        result = tmdb.get_movie_details(tid)
-        if result and "id" in result:
-            movie_list.append(result)
-
-    if len(movie_list) < 2:
-        return Response({"error": "Could not fetch both movies"}, status=404)
-
-    return Response({"movies": movie_list})
