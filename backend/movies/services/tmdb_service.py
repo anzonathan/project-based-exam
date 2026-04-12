@@ -253,12 +253,8 @@ class MovieSyncService:
         """Sync trending movies to local DB."""
         for page in range(1, pages + 1):
             data = self.tmdb.get_trending_movies(page=page)
-
-            print("PAGE:", page)
-            print("DATA:", data)
-
             for movie_data in data.get("results", []):
-                print("MOVIE:", movie_data.get("title"))
+                logger.debug("Sync trending page %s: %s", page, movie_data.get("title"))
                 self.sync_movie(movie_data["id"])
 
 
@@ -270,9 +266,10 @@ class WikipediaService:
     @staticmethod
     def get_movie_summary(title: str, year: Optional[int] = None) -> dict:
         """getting  Wikipedia summary for a movie."""
-        search_title = f"{title} (film)" if year else f"{title} (film)"
         if year:
             search_title = f"{title} ({year} film)"
+        else:
+            search_title = f"{title} (film)"
 
         cache_key = f"wiki:{search_title}"
         cached = cache.get(cache_key)

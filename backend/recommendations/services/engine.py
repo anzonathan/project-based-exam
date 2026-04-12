@@ -30,20 +30,7 @@ class RecommendationEngine:
         genre_names = {}
 
         for interaction in interactions:
-            if interaction.interaction_type == "like":
-                w = 5.0
-            elif interaction.interaction_type == "watched":
-                w = 3.0
-            elif interaction.interaction_type == "watchlist":
-                w = 2.5
-            elif interaction.interaction_type == "view":
-                w = 1.0
-            elif interaction.interaction_type == "search":
-                w = 0.5
-            elif interaction.interaction_type == "dislike":
-                w = -3.0
-            else:
-                w = 1.0
+            w = INTERACTION_WEIGHTS.get(interaction.interaction_type, 1.0)
             for genre_id in interaction.genre_ids:
                 genre_scores[genre_id] += w
                 if genre_id not in genre_names:
