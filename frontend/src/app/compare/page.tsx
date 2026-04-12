@@ -9,15 +9,15 @@ import {
 } from "lucide-react";
 import { moviesAPI } from "@/lib/api";
 import { posterUrl, formatRuntime, formatCurrency, ratingColor } from "@/lib/utils";
-import type { MovieCompact } from "@/types/movie";
+import type { MovieCompact, TMDBMovieDetail } from "@/types/movie";
 
 export default function ComparePage() {
   const [searchA, setSearchA] = useState("");
   const [searchB, setSearchB] = useState("");
   const [resultsA, setResultsA] = useState<MovieCompact[]>([]);
   const [resultsB, setResultsB] = useState<MovieCompact[]>([]);
-  const [movieA, setMovieA] = useState<any>(null);
-  const [movieB, setMovieB] = useState<any>(null);
+  const [movieA, setMovieA] = useState<TMDBMovieDetail | null>(null);
+  const [movieB, setMovieB] = useState<TMDBMovieDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchingA, setSearchingA] = useState(false);
   const [searchingB, setSearchingB] = useState(false);
@@ -271,7 +271,7 @@ export default function ComparePage() {
             <p className="text-[11px] uppercase tracking-wider text-white/25 font-semibold text-center mb-4">Top Cast</p>
             <div className="flex gap-6">
               <div className="flex-1 space-y-1.5">
-                {(movieA.credits?.cast || []).slice(0, 5).map((c: any) => (
+                {(movieA?.credits?.cast || []).slice(0, 5).map((c) => (
                   <div key={c.id} className="flex items-center gap-2 justify-end">
                     <div className="text-right">
                       <p className="text-[12px] text-white/60">{c.name}</p>
@@ -293,7 +293,7 @@ export default function ComparePage() {
               </div>
               <div className="flex-shrink-0 w-px bg-white/[0.06]" />
               <div className="flex-1 space-y-1.5">
-                {(movieB.credits?.cast || []).slice(0, 5).map((c: any) => (
+                {(movieB?.credits?.cast || []).slice(0, 5).map((c) => (
                   <div key={c.id} className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-3 flex-shrink-0">
                       {c.profile_path ? (
