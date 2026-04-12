@@ -15,6 +15,12 @@ from movies.models import Genre
 from recommendations.models import UserMovieInteraction, UserGenrePreference, Watchlist
 from recommendations.serializers import UserMovieInteractionSerializer
 from recommendations.services.engine import RecommendationEngine
+from recommendations.constants import (
+    DASHBOARD_ACTIVITY_LOOKBACK_DAYS,
+    DASHBOARD_GENRE_DISTRIBUTION_LIMIT,
+    DASHBOARD_PREFERENCE_ROW_LIMIT,
+    DASHBOARD_RECENT_INTERACTIONS_LIMIT,
+)
 
 
 def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> dict:
@@ -45,7 +51,7 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
             genre_counter[gid] += 1
 
     genre_distribution = []
-    for gid, count in genre_counter.most_common(10):
+    for gid, count in genre_counter.most_common(DASHBOARD_GENRE_DISTRIBUTION_LIMIT):
         try:
             genre = Genre.objects.get(tmdb_id=gid)
             genre_distribution.append(
@@ -57,13 +63,15 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
             )
 
     eng.compute_genre_preferences(user)
-    prefs = UserGenrePreference.objects.filter(user=user).order_by("-weight")[:10]
+    prefs = UserGenrePreference.objects.filter(user=user).order_by("-weight")[
+        :DASHBOARD_PREFERENCE_ROW_LIMIT
+    ]
     preference_scores = [
         {"name": p.genre_name, "weight": round(p.weight, 1), "count": p.interaction_count}
         for p in prefs
     ]
 
-    thirty_days_ago = timezone.now() - timedelta(days=30)
+    thirty_days_ago = timezone.now() - timedelta(days=DASHBOARD_ACTIVITY_LOOKBACK_DAYS)
     daily_activity = (
         interactions.filter(created_at__gte=thirty_days_ago)
         .annotate(date=TruncDate("created_at"))
@@ -75,7 +83,7 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         {"date": str(d["date"]), "count": d["count"]} for d in daily_activity
     ]
 
-    recent = interactions.order_by("-created_at")[:10]
+    recent = interactions.order_by("-created_at")[:DASHBOARD_RECENT_INTERACTIONS_LIMIT]
     recent_data = UserMovieInteractionSerializer(recent, many=True).data
 
     avg_rating = interactions.filter(rating__isnull=False).aggregate(avg=Avg("rating"))["avg"]

@@ -1,7 +1,13 @@
 import logging
 from collections import Counter
-from django.db.models import Avg, Count
+
 from movies.services.tmdb_service import TMDBService
+from recommendations.constants import (
+    BECAUSE_YOU_WATCHED_MOVIES_PER_TITLE,
+    BECAUSE_YOU_WATCHED_RECENT_INTERACTIONS,
+    DIRECTOR_FILMOGRAPHY_LIMIT,
+    DISCOVER_MIN_VOTE_COUNT_FOR_RECOMMENDATIONS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +96,7 @@ class RecommendationEngine:
             data = self.tmdb.discover_movies(
                 with_genres=genre_id,
                 sort_by="vote_average.desc",
-                vote_count_gte=100,  
+                vote_count_gte=DISCOVER_MIN_VOTE_COUNT_FOR_RECOMMENDATIONS,
                 page=page,
             )
             movies = data.get("results", [])
@@ -125,7 +131,7 @@ class RecommendationEngine:
 
         ##sorting by popularity
         directed.sort(key=lambda x: x.get("popularity", 0), reverse=True)
-        return directed[:10]
+        return directed[:DIRECTOR_FILMOGRAPHY_LIMIT]
 
     def get_because_you_watched(self, user, limit: int = 20) -> dict:
         from recommendations.models import UserMovieInteraction
@@ -133,12 +139,12 @@ class RecommendationEngine:
         recent = UserMovieInteraction.objects.filter(
             user=user,
             interaction_type__in=["watched", "like"],
-        ).order_by("-created_at")[:5]
+        ).order_by("-created_at")[:BECAUSE_YOU_WATCHED_RECENT_INTERACTIONS]
 
         results = {}
         for interaction in recent:
             data = self.tmdb.get_movie_recommendations(interaction.movie_tmdb_id)
-            movies = data.get("results", [])[:5]
+            movies = data.get("results", [])[:BECAUSE_YOU_WATCHED_MOVIES_PER_TITLE]
             if movies:
                 results[interaction.movie_title] = movies
 
