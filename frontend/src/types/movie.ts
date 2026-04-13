@@ -50,22 +50,22 @@ export interface WatchProvider {
 }
 
 export interface MovieDetail extends MovieCompact {
-  imdb_id: string;
+  imdb_id: string | null;
   original_title: string;
-  tagline: string;
+  tagline: string | null;
   backdrop_url: string | null;
   trailer_url: string | null;
   trailer_embed_url: string | null;
-  trailer_key: string;
+  trailer_key: string | null;
   budget: number;
   revenue: number;
   status: string;
-  homepage: string;
+  homepage: string | null;
   directors: Person[];
   cast: CastMember[];
   watch_providers: WatchProvider[];
-  wikipedia_url: string;
-  wikipedia_summary: string;
+  wikipedia_url: string | null;
+  wikipedia_summary: string | null;
 }
 
 // TMDB Raw Response Types (from /movies/tmdb/:id/ endpoint)
@@ -128,9 +128,9 @@ export interface TMDBMovieDetail {
   budget: number;
   revenue: number;
   status: string;
-  homepage: string;
-  imdb_id: string;
-  tagline: string;
+  homepage: string | null;
+  imdb_id: string | null;
+  tagline: string | null;
   genres: Array<{ id: number; name: string }>;
   credits: TMDBCredits;
   videos: { results: TMDBVideo[] };
@@ -158,8 +158,8 @@ export interface PaginatedResponse<T> {
 export interface User {
   id: number;
   username: string;
-  email: string;
-  avatar_url: string;
+  email: string ;
+  avatar_url: string | null;
   favorite_genres: number[];
   country_code: string;
   date_joined: string;
@@ -184,7 +184,7 @@ export interface WatchlistItem {
   user: number;
   movie_tmdb_id: number;
   movie_title: string;
-  poster_path: string;
+  poster_path: string | null;
   added_at: string;
   watched: boolean;
   watched_at: string | null;
@@ -277,7 +277,7 @@ export interface BecauseYouWatchedResponse {
 export interface LocalLikedMovie {
   id: number;
   title: string;
-  poster_url: string;
+  poster_url: string | null;
   type: "like" | "dislike";
   genres: number[];
   timestamp: number;
@@ -286,7 +286,7 @@ export interface LocalLikedMovie {
 export interface LocalWatchlistItem {
   id: number;
   title: string;
-  poster_url: string;
+  poster_url: string | null;
   timestamp: number;
 }
 
