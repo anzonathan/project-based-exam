@@ -108,7 +108,7 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 CORS_ALLOW_CREDENTIALS = True
 
 # TMDB API
-TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
+TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "c471a056dfe7f294ce77c948eff447d8")
 TMDB_API_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p"
 
