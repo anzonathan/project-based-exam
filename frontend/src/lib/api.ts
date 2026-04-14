@@ -128,6 +128,29 @@ export const authAPI = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) =>
+    apiFetch<{ detail: string }>("/users/change-password/", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: confirmPassword,
+      }),
+    }),
+
+  logout: async () => {
+    try {
+      await apiFetch<{ detail: string }>("/users/logout/", {
+        method: "POST",
+        body: JSON.stringify({
+          refresh: typeof window !== "undefined" ? sessionStorage.getItem("cq_refresh") || "" : "",
+        }),
+      });
+    } finally {
+      clearTokens();
+    }
+  },
 };
 
 // Movies API
