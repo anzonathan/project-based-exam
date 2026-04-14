@@ -17,7 +17,7 @@ interface MovieCarouselProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  movies: MovieCompact[] | { results?: MovieCompact[] } | null | undefined;
+  movies: MovieCompact[];
   loading?: boolean;
   href?: string;
 }
@@ -31,11 +31,6 @@ export default function MovieCarousel({
   href,
 }: MovieCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const normalizedMovies = Array.isArray(movies)
-    ? movies
-    : Array.isArray(movies?.results)
-      ? movies.results
-      : [];
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {

@@ -17,14 +17,8 @@ export default function HeroSection({ movies }: HeroSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [progressKey, setProgressKey] = useState(0);
-   const maybeResults = (movies as { results?: MovieCompact[] } | null | undefined)?.results;
-  const normalizedMovies: MovieCompact[] = Array.isArray(movies)
-    ? movies
-    : Array.isArray(maybeResults)
-      ? maybeResults
-      : [];
-  const heroMovies = normalizedMovies.slice(0, 6);
-
+  
+  const heroMovies = (movies || []).slice(0, 6);
 
   const goTo = useCallback(
     (index: number) => {
@@ -166,12 +160,14 @@ export default function HeroSection({ movies }: HeroSectionProps) {
       {/* Navigation arrows  */}
       <button
         onClick={goPrev}
+        aria-label="Previous slide"
         className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full glass flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 group"
       >
         <ChevronLeft className="w-5 h-5 text-white/60 group-hover:text-gold transition-colors" />
       </button>
       <button
         onClick={goNext}
+        aria-label="Next slide"
         className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full glass flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300 group"
       >
         <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-gold transition-colors" />
@@ -183,6 +179,7 @@ export default function HeroSection({ movies }: HeroSectionProps) {
           <button
             key={m.id || m.tmdb_id}
             onClick={() => goTo(i)}
+            aria-label={`Go to slide ${i + 1}`}
             className="group relative"
           >
             <div className={`h-[3px] rounded-full transition-all duration-300 ${
@@ -214,6 +211,7 @@ export default function HeroSection({ movies }: HeroSectionProps) {
             <button
               key={m.id || m.tmdb_id}
               onClick={() => goTo(i)}
+              aria-label={`Select ${m.title}`}
               className={`relative w-[60px] h-[90px] rounded-lg overflow-hidden transition-all duration-400 ${
                 i === activeIndex
                   ? "ring-2 ring-gold/60 scale-110 shadow-lg shadow-gold/10"
