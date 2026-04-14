@@ -60,6 +60,61 @@ def _tmdb_recommendation_response(data: dict) -> Response:
     return Response(serializer.data)
 
 
+def _positive_int_param(params, name: str, default: int):
+    raw = params.get(name, default)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a positive integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if value <= 0:
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a positive integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return value, None
+
+
+def _optional_year_param(params, name: str):
+    raw = params.get(name)
+    if raw in (None, ""):
+        return None, None
+    try:
+        year = int(raw)
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a year."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if year < 1878 or year > 2100:
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a year between 1878 and 2100."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return year, None
+
+
+def _optional_nonnegative_int_param(params, name: str):
+    raw = params.get(name)
+    if raw in (None, ""):
+        return None, None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a non-negative integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if value < 0:
+        return None, Response(
+            {"detail": f"Invalid '{name}': expected a non-negative integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return value, None
+
+
 ## Movie ViewSet
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Movie.objects.prefetch_related("genres", "directors").all()
