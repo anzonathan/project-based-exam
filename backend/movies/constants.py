@@ -1,0 +1,5 @@
+"""Numeric and string defaults shared by movie API views."""
+
+MIN_LOCAL_MOVIES_FOR_GENRE_LIST = 20
+COMPARE_MOVIE_SLOT_COUNT = 2
+DISCOVER_MIN_VOTE_COUNT_WITH_RATING_FILTER = 50

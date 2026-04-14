@@ -10,41 +10,19 @@ import {
   BookmarkCheck, Heart, Sparkles, ChevronRight,
 } from "lucide-react";
 import MovieCarousel from "@/components/MovieCarousel";
-import MovieCard from "@/components/MovieCard";
 import { moviesAPI } from "@/lib/api";
+import { fetchTmdbMovieBundle } from "@/lib/tmdbMovieRaw";
+import {
+  getLikedMovies,
+  saveLikedMovies,
+  getWatchlist,
+  saveWatchlist,
+} from "@/lib/localPreferences";
 import {
   posterUrl, backdropUrl, formatRuntime, formatCurrency,
-  formatDate, ratingColor,
+  ratingColor,
 } from "@/lib/utils";
-import type { MovieCompact, MovieDetail, LocalLikedMovie, LocalWatchlistItem, TMDBMovieDetail } from "@/types/movie";
-
-function getLikedMovies(): LocalLikedMovie[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("cq_liked") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveLikedMovies(movies: LocalLikedMovie[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("cq_liked", JSON.stringify(movies));
-}
-
-function getWatchlist(): LocalWatchlistItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem("cq_watchlist") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveWatchlist(movies: LocalWatchlistItem[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("cq_watchlist", JSON.stringify(movies));
-}
+import type { MovieCompact, LocalLikedMovie, LocalWatchlistItem, TMDBMovieDetail } from "@/types/movie";
 
 export default function MovieDetailPage() {
   const params = useParams();
@@ -83,15 +61,12 @@ export default function MovieDetailPage() {
       try {
         const data = await moviesAPI.getDetail(tmdbId);
         setMovie(data);
-        const recData = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/movies/tmdb/${tmdbId}/`
-        ).then(r => r.json());
-
-        const recs = recData?.recommendations?.results || [];
+        const recData = await fetchTmdbMovieBundle(tmdbId);
+        const recBlock = recData.recommendations as { results?: MovieCompact[] } | undefined;
+        const simBlock = recData.similar as { results?: MovieCompact[] } | undefined;
+        const recs = recBlock?.results ?? [];
         setRecommendations(recs.slice(0, 15));
-
-        // Similar movies
-        const similar = recData?.similar?.results || [];
+        const similar = simBlock?.results ?? [];
         setSimilarMovies(similar.slice(0, 15));
 
         // "Because you liked" - get recs from liked movies
@@ -107,16 +82,14 @@ export default function MovieDetailPage() {
 
   // Fetch recommendations based on locally liked movies
   async function fetchLikedRecommendations() {
-    const liked = getLikedMovies().filter((m: any) => m.type === "like");
+    const liked = getLikedMovies().filter((m) => m.type === "like");
     if (liked.length === 0) return;
 
     try {
-      // Take a random liked movie and get its recommendations
       const randomLiked = liked[Math.floor(Math.random() * liked.length)];
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/movies/tmdb/${randomLiked.id}/`
-      ).then(r => r.json());
-      const recs = res?.recommendations?.results || [];
+      const res = await fetchTmdbMovieBundle(randomLiked.id);
+      const recBlock = res.recommendations as { results?: MovieCompact[] } | undefined;
+      const recs = recBlock?.results ?? [];
       setLikedRecs(recs.slice(0, 10));
     } catch {
       // Silently fail

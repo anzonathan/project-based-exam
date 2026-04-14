@@ -1,11 +1,24 @@
+"""
+Recommendation scoring from user interactions and TMDB discovery.
+
+Weights in ``INTERACTION_WEIGHTS`` drive genre preference aggregation; discover
+calls refine candidate movies for the authenticated user.
+"""
+
 import logging
 from collections import Counter
-from django.db.models import Avg, Count
+
 from movies.services.tmdb_service import TMDBService
+from recommendations.constants import (
+    BECAUSE_YOU_WATCHED_MOVIES_PER_TITLE,
+    BECAUSE_YOU_WATCHED_RECENT_INTERACTIONS,
+    DIRECTOR_FILMOGRAPHY_LIMIT,
+    DISCOVER_MIN_VOTE_COUNT_FOR_RECOMMENDATIONS,
+)
 
 logger = logging.getLogger(__name__)
 
-# Interaction weights
+# Per-interaction-type multipliers when inferring genre preference strength.
 INTERACTION_WEIGHTS = {
     "like": 5.0,
     "watched": 3.0,
@@ -17,12 +30,20 @@ INTERACTION_WEIGHTS = {
 
 
 class RecommendationEngine:
-    """Class to generate personalized movie recommendations."""
+    """
+    Derive genre preferences from stored interactions and fetch TMDB candidates.
+
+    Preferences are persisted in ``UserGenrePreference`` for reuse by the API.
+    """
 
     def __init__(self):
         self.tmdb = TMDBService()
 
     def compute_genre_preferences(self, user) -> list:
+        """
+        Aggregate interaction-weighted genre scores for ``user``, normalize to 0–100,
+        upsert ``UserGenrePreference`` rows, and return sorted ``(genre_tmdb_id, score)`` pairs.
+        """
         from recommendations.models import UserMovieInteraction, UserGenrePreference
 
         interactions = UserMovieInteraction.objects.filter(user=user)
@@ -30,20 +51,7 @@ class RecommendationEngine:
         genre_names = {}
 
         for interaction in interactions:
-            if interaction.interaction_type == "like":
-                w = 5.0
-            elif interaction.interaction_type == "watched":
-                w = 3.0
-            elif interaction.interaction_type == "watchlist":
-                w = 2.5
-            elif interaction.interaction_type == "view":
-                w = 1.0
-            elif interaction.interaction_type == "search":
-                w = 0.5
-            elif interaction.interaction_type == "dislike":
-                w = -3.0
-            else:
-                w = 1.0
+            w = INTERACTION_WEIGHTS.get(interaction.interaction_type, 1.0)
             for genre_id in interaction.genre_ids:
                 genre_scores[genre_id] += w
                 if genre_id not in genre_names:
@@ -54,14 +62,12 @@ class RecommendationEngine:
                     except Genre.DoesNotExist:
                         genre_names[genre_id] = f"Genre {genre_id}"
 
-        ### normalizing scores to 0-100 range
         if genre_scores:
             max_score = max(genre_scores.values())
             if max_score > 0:
                 for gid in genre_scores:
                     genre_scores[gid] = (genre_scores[gid] / max_score) * 100
 
-        ## saving preferences
         for genre_id, score in genre_scores.items():
             UserGenrePreference.objects.update_or_create(
                 user=user,
@@ -78,16 +84,20 @@ class RecommendationEngine:
         return sorted(genre_scores.items(), key=lambda x: x[1], reverse=True)
 
     def get_recommendations(self, user, page: int = 1, limit: int = 20) -> list:
+        """
+        Return up to ``limit`` TMDB movie dicts for ``user``.
+
+        Falls back to trending when there is no preference signal. Excludes movies
+        the user marked watched or disliked. ``page`` is passed through to TMDB discover.
+        """
         from recommendations.models import UserMovieInteraction
 
-        ## computing fresh preferences
         preferences = self.compute_genre_preferences(user)
 
         if not preferences:
             data = self.tmdb.get_trending_movies(page=page)
             return data.get("results", [])
 
-        ## getting movies the user has already seen
         seen_ids = set(
             UserMovieInteraction.objects.filter(
                 user=user,
@@ -103,7 +113,7 @@ class RecommendationEngine:
             data = self.tmdb.discover_movies(
                 with_genres=genre_id,
                 sort_by="vote_average.desc",
-                vote_count_gte=100,  
+                vote_count_gte=DISCOVER_MIN_VOTE_COUNT_FOR_RECOMMENDATIONS,
                 page=page,
             )
             movies = data.get("results", [])
@@ -119,13 +129,15 @@ class RecommendationEngine:
                 seen_in_batch.add(mid)
                 unique_movies.append(m)
 
-        ### sorting by recommendation score
         unique_movies.sort(key=lambda x: x.get("_recommendation_score", 0), reverse=True)
 
         return unique_movies[:limit]
 
     def get_director_recommendations(self, director_tmdb_id: int, exclude_movie_id: int = None) -> list:
-        """getting other movies by a specific director."""
+        """
+        Return up to ``DIRECTOR_FILMOGRAPHY_LIMIT`` directing credits for a person,
+        excluding ``exclude_movie_id`` when provided, ordered by TMDB popularity.
+        """
         data = self.tmdb.get_person_details(director_tmdb_id)
         if not data:
             return []
@@ -136,22 +148,27 @@ class RecommendationEngine:
             if c.get("job") == "Director" and c.get("id") != exclude_movie_id
         ]
 
-        ##sorting by popularity
         directed.sort(key=lambda x: x.get("popularity", 0), reverse=True)
-        return directed[:10]
+        return directed[:DIRECTOR_FILMOGRAPHY_LIMIT]
 
     def get_because_you_watched(self, user, limit: int = 20) -> dict:
+        """
+        Map recent liked/watched movie titles to small TMDB recommendation lists.
+
+        ``limit`` is reserved for future use; response size is governed by
+        ``BECAUSE_YOU_WATCHED_*`` constants.
+        """
         from recommendations.models import UserMovieInteraction
 
         recent = UserMovieInteraction.objects.filter(
             user=user,
             interaction_type__in=["watched", "like"],
-        ).order_by("-created_at")[:5]
+        ).order_by("-created_at")[:BECAUSE_YOU_WATCHED_RECENT_INTERACTIONS]
 
         results = {}
         for interaction in recent:
             data = self.tmdb.get_movie_recommendations(interaction.movie_tmdb_id)
-            movies = data.get("results", [])[:5]
+            movies = data.get("results", [])[:BECAUSE_YOU_WATCHED_MOVIES_PER_TITLE]
             if movies:
                 results[interaction.movie_title] = movies
 

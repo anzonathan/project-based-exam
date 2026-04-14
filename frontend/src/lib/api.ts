@@ -17,8 +17,9 @@ import type {
   UserInteraction,
   TMDBMovieDetail,
 } from "@/types/movie";
+import { API_BASE_URL } from "@/lib/apiConfig";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE = API_BASE_URL;
 
 // Token Management
 
@@ -50,8 +51,7 @@ export function clearTokens() {
   }
 }
 
-// Fetch Wrappe
-
+/** JSON request helper with bearer auth and refresh-token retry. */
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
