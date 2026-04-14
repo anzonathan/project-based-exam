@@ -5,6 +5,7 @@ describe("api auth client", () => {
     clearTokens();
     sessionStorage.clear();
     jest.restoreAllMocks();
+    (globalThis as unknown as { fetch: jest.Mock }).fetch = jest.fn();
   });
 
   it("persists and reloads tokens from sessionStorage", () => {
@@ -24,9 +25,8 @@ describe("api auth client", () => {
   it("sends bearer token for authenticated requests", async () => {
     setTokens({ access: "access-token", refresh: "refresh-token" });
 
-    const fetchMock = jest
-      .spyOn(global, "fetch" as never)
-      .mockResolvedValueOnce({
+    const fetchMock = globalThis.fetch as jest.Mock;
+    fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: async () => ({
@@ -51,8 +51,8 @@ describe("api auth client", () => {
   it("refreshes token and retries once on 401", async () => {
     setTokens({ access: "expired-access", refresh: "valid-refresh" });
 
-    const fetchMock = jest
-      .spyOn(global, "fetch" as never)
+    const fetchMock = globalThis.fetch as jest.Mock;
+    fetchMock
       .mockResolvedValueOnce({ ok: false, status: 401 } as Response)
       .mockResolvedValueOnce({
         ok: true,
