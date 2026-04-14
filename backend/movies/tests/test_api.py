@@ -20,8 +20,8 @@ class MoviesAPITestCase(TestCase):
         r = self.client.get(url)
 
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", r.json())
-        self.assertEqual(r.json()["error"], "Query parameter 'q' is required")
+        self.assertIn("detail", r.json())
+        self.assertEqual(r.json()["detail"], "Query parameter 'q' is required.")
 
     def test_trending_allows_get(self):
         """Trending must accept GET (browser and Next.js default)."""
@@ -57,37 +57,13 @@ class MoviesAPITestCase(TestCase):
         self.assertIsInstance(data, list)
         self.assertTrue(all("slug" in m and "label" in m for m in data))
 
-    def test_upcoming_endpoint(self):
-        """Upcoming releases endpoint wraps TMDB upcoming list."""
-        fake = {
-            "results": [
-                {
-                    "id": 999001,
-                    "title": "Future Film",
-                    "overview": "Synopsis",
-                    "release_date": "2099-01-01",
-                    "vote_average": 8.0,
-                    "vote_count": 10,
-                    "popularity": 1.0,
-                    "poster_path": "/x.jpg",
-                    "backdrop_path": "/y.jpg",
-                    "genre_ids": [28],
-                }
-            ],
-            "total_pages": 1,
-            "total_results": 1,
-            "page": 1,
-        }
+    def test_discover_rejects_invalid_page(self):
+        """Discover should validate page query params before calling TMDB."""
+        url = reverse("discover-filtered")
+        r = self.client.get(url, {"page": "0"})
 
-        with patch("movies.views.tmdb.get_upcoming_movies", return_value=fake):
-            url = reverse("upcoming-movies")
-            r = self.client.get(url)
-
-        self.assertEqual(r.status_code, status.HTTP_200_OK)
-        body = r.json()
-
-        self.assertEqual(len(body["results"]), 1)
-        self.assertEqual(body["results"][0]["tmdb_id"], 999001)
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", r.json())
 
 
 class GenreSyncLogicTestCase(TestCase):
