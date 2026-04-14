@@ -347,3 +347,8 @@ def compare_movies(request):
         return Response({"error": "Could not fetch both movies"}, status=404)
 
     return Response({"movies": movies})
+<<<<<<< HEAD
+
+
+=======
+>>>>>>> 9b03ed7da80ba36b6454b8bae6251888acc04a5f
