@@ -28,3 +28,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password_confirm")
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, min_length=8, required=True)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=8, required=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError(
+                {"new_password_confirm": "New passwords don't match."}
+            )
+        return attrs
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=False, allow_blank=True)
