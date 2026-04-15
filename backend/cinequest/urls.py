@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -24,18 +24,6 @@ def api_root(_request):
         }
     )
 
-urlpatterns = [
-    path("", api_root, name="api-root"),
-    path("admin/", admin.site.urls),
-    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/users/", include("users.urls")),
-    path("api/movies/", include("movies.urls")),
-    path("api/recommendations/", include("recommendations.urls")),
-]
-
-
-
 schema_view = get_schema_view(
     openapi.Info(
         title="CineQuest API",
@@ -47,12 +35,13 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
-    # YOUR APIs
-    path('api/users/', include('users.urls')),
-    path('api/movies/', include('movies.urls')),
-    path('api/recommendations/', include('recommendations.urls')),
+    path("", api_root, name="api-root"),
+    path("admin/", admin.site.urls),
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/users/", include("users.urls")),
+    path("api/movies/", include("movies.urls")),
+    path("api/recommendations/", include("recommendations.urls")),
 
     # SWAGGER
     re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0)),
