@@ -1,6 +1,12 @@
 from rest_framework import serializers
 from .models import Genre, Person, Movie, MovieCast, WatchProvider
 
+class BasePersonSerializer(serializers.ModelSerializer):
+    profile_url = serializers.ReadOnlyField()
+
+    class Meta:
+        model  = Person
+        fields = ["id", "tmdb_id", "name", "profile_url", "known_for_department"]
 
 class GenreSerializer(serializers.ModelSerializer):
     movie_count = serializers.SerializerMethodField()
@@ -13,21 +19,18 @@ class GenreSerializer(serializers.ModelSerializer):
         return obj.movies.count()
 
 
-class PersonCompactSerializer(serializers.ModelSerializer):
-    profile_url = serializers.ReadOnlyField()
+class PersonCompactSerializer(BasePersonSerializer):
+   
 
-    class Meta:
-        model = Person
+    class Meta(BasePersonSerializer):
         fields = ["id", "tmdb_id", "name", "profile_url", "known_for_department"]
 
 
-class PersonDetailSerializer(serializers.ModelSerializer):
-    profile_url = serializers.ReadOnlyField()
+class PersonDetailSerializer(BasePersonSerializer):
     directed_movies = serializers.SerializerMethodField()
     acted_movies = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Person
+    class Meta(BasePersonSerializer.Meta):
         fields = [
             "id", "tmdb_id", "name", "profile_url", "biography",
             "birthday", "place_of_birth", "known_for_department",
@@ -57,16 +60,30 @@ class WatchProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = WatchProvider
         fields = ["provider_name", "provider_type", "logo_url", "link"]
-
-
-class MovieCompactSerializer(serializers.ModelSerializer):
-    """Lightweight movie serializer for lists."""
+        
+class BaseMovieSerializer(serializers.ModelSerializer):
+   
     poster_url = serializers.ReadOnlyField()
-    poster_url_small = serializers.ReadOnlyField()
-    genres = GenreSerializer(many=True, read_only=True)
-    year = serializers.SerializerMethodField()
+    genres     = GenreSerializer(many=True, read_only=True)
+    year       = serializers.SerializerMethodField()
 
     class Meta:
+        model  = Movie
+        fields = [
+            "id", "tmdb_id", "title", "overview", "release_date", "year",
+            "vote_average", "vote_count", "popularity",
+            "poster_url", "genres", "runtime",
+        ]
+
+
+    def get_year(self, obj):
+        return obj.release_date.year if obj.release_date else None
+
+class MovieCompactSerializer(BaseMovieSerializer):
+    poster_url = serializers.ReadOnlyField()
+    
+
+    class Meta(BaseMovieSerializer.Meta):
         model = Movie
         fields = [
             "id", "tmdb_id", "title", "overview", "release_date", "year",
@@ -74,12 +91,7 @@ class MovieCompactSerializer(serializers.ModelSerializer):
             "poster_url_small", "genres", "runtime",
         ]
 
-    def get_year(self, obj):
-        return obj.release_date.year if obj.release_date else None
-
-
 class MovieDetailSerializer(serializers.ModelSerializer):
-    """Full movie serializer with all relationships."""
     poster_url = serializers.ReadOnlyField()
     backdrop_url = serializers.ReadOnlyField()
     trailer_url = serializers.ReadOnlyField()
@@ -92,8 +104,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     wikipedia_url = serializers.ReadOnlyField()
     wikipedia_summary = serializers.ReadOnlyField()
 
-    class Meta:
-        model = Movie
+    class Meta(BaseMovieSerializer.Meta):
         fields = [
             "id", "tmdb_id", "imdb_id", "title", "original_title",
             "overview", "tagline", "release_date", "year", "runtime",
