@@ -260,6 +260,10 @@ export interface DashboardSummary {
   average_rating: number | null;
 }
 
+export interface WrappedTopGenre { name: string; tmdb_id: number; count: number; }
+export interface WrappedTopMovie { tmdb_id: number; movie_title: string; poster_url: string | null; count: number; }
+export interface Wrapped { year: number; total_interactions_year: number; top_genres: WrappedTopGenre[]; top_movies: WrappedTopMovie[]; }
+
 export interface DashboardStats {
   summary: DashboardSummary;
   genre_distribution: GenreDistribution[];
@@ -270,6 +274,7 @@ export interface DashboardStats {
   disliked_movies: UserInteraction[];
   watched_movies: UserInteraction[];
   watchlist_items: WatchlistItem[];
+  wrapped?: Wrapped;
 }
 
 // Movie Discovery Types

@@ -177,6 +177,51 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Wrapped summary (Spotify Wrapped style) */}
+      {stats?.wrapped && (
+        <div className="px-6 md:px-10 lg:px-20 mb-10">
+          <div className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-4 h-4 text-gold" />
+              <h2 className="text-lg font-bold font-display">Wrapped — {stats.wrapped.year}</h2>
+            </div>
+            <p className="text-sm text-white/30 mb-4">A snapshot of your year in movies</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Top Genres</h3>
+                <div className="space-y-2">
+                  {stats.wrapped.top_genres.map((g: any) => (
+                    <div key={g.tmdb_id} className="flex justify-between text-sm">
+                      <span>{g.name}</span>
+                      <span className="text-white/30">{g.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Top Movies</h3>
+                <div className="space-y-3">
+                  {stats.wrapped.top_movies.map((m: any) => (
+                    <div key={m.tmdb_id} className="flex items-center gap-3">
+                      {m.poster_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.poster_url} alt={m.movie_title} className="w-12 h-16 object-cover rounded-md" />
+                      ) : (
+                        <div className="w-12 h-16 bg-white/5 rounded-md" />
+                      )}
+                      <div>
+                        <div className="text-sm font-medium">{m.movie_title}</div>
+                        <div className="text-xs text-white/30">{m.count} interactions</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Watchlist Detailed Stats */}
       {summary.watchlist_total > 0 && (
         <div className="px-6 md:px-10 lg:px-20 mb-10">
