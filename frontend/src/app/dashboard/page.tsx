@@ -349,38 +349,31 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Recent activity */}
+      {/* Recent activity as carousel (views first) */}
       {recent.length > 0 && (
         <div className="px-6 md:px-10 lg:px-20">
-          <div className="glass-card rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles className="w-4 h-4 text-gold" />
-              <h2 className="text-lg font-bold font-display">Recent Activity</h2>
-            </div>
-            <div className="space-y-2">
-              {recent.map((item: any, i: number) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                      item.interaction_type === "like" ? "bg-emerald-500/15 text-emerald-400" :
-                      item.interaction_type === "dislike" ? "bg-red-500/15 text-red-400" :
-                      item.interaction_type === "watched" ? "bg-blue-500/15 text-blue-400" :
-                      "bg-white/5 text-white/40"
-                    }`}>
-                      {item.interaction_type}
-                    </span>
-                    <span className="text-sm text-white/70">{item.movie_title}</span>
-                  </div>
-                  <span className="text-[11px] text-white/20">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <MovieCarousel
+            title="Recent Activity"
+            subtitle="Your latest interactions (views shown)"
+            icon={<Sparkles className="w-4 h-4 text-gold" />}
+            movies={recent
+              .filter((r: any) => r.interaction_type === "view")
+              .map((r: any) => ({
+                id: r.id,
+                tmdb_id: r.movie_tmdb_id,
+                title: r.movie_title,
+                poster_url: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null),
+                poster_url_small: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w185${r.poster_path}` : null),
+                overview: "",
+                release_date: "",
+                year: null,
+                vote_average: 0,
+                vote_count: 0,
+                popularity: 0,
+                genres: [],
+                runtime: null,
+              }))}
+          />
         </div>
       )}
 
