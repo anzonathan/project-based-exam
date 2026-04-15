@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { recommendationsAPI } from "@/lib/api";
 import MovieCarousel from "@/components/MovieCarousel";
+import WrappedSlideshow from "@/components/WrappedSlideshow";
 import type { 
   DashboardStats, DashboardSummary, GenreDistribution, 
   PreferenceScore, ActivityEntry, UserInteraction, MovieCompact,
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWrapped, setShowWrapped] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -149,19 +151,34 @@ export default function DashboardPage() {
   return (
     <div className="pt-24 pb-20 max-w-[1440px] mx-auto">
       {/* Header */}
-      <div className="px-6 md:px-10 lg:px-20 flex items-center gap-4 mb-10">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-gold-dim flex items-center justify-center shadow-lg shadow-gold/10">
-          <BarChart3 className="w-5 h-5 text-surface-0" />
+      <div className="px-6 md:px-10 lg:px-20 flex items-center justify-between gap-4 mb-10">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-gold-dim flex items-center justify-center shadow-lg shadow-gold/10">
+            <BarChart3 className="w-5 h-5 text-surface-0" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold font-display">
+              Your <span className="text-gold italic">Dashboard</span>
+            </h1>
+            <p className="text-sm text-white/30">
+              Welcome back, {user?.username}. Here&apos;s your movie journey.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold font-display">
-            Your <span className="text-gold italic">Dashboard</span>
-          </h1>
-          <p className="text-sm text-white/30">
-            Welcome back, {user?.username}. Here&apos;s your movie journey.
-          </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowWrapped(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-gold to-gold-dim text-surface-0 font-semibold text-sm"
+          >
+            <Sparkles className="w-4 h-4" />
+            Your Wrapped
+          </button>
         </div>
       </div>
+
+      {/* Wrapped slideshow component */}
+      <WrappedSlideshow isOpen={showWrapped} onClose={() => setShowWrapped(false)} wrapped={stats?.wrapped} />
 
       {/* Statistics cards */}
       <div className="px-6 md:px-10 lg:px-20 grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
