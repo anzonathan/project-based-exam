@@ -287,14 +287,25 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 mb-5">
             <Film className="w-4 h-4 text-gold" />
             <h2 className="text-lg font-bold font-display">Genre Distribution</h2>
+            <div className="ml-4 flex items-center gap-2 text-xs text-white/40">
+              <span>Movies/day</span>
+              <div className="h-4 w-24 flex items-end gap-1">
+                {timeline.slice(-7).map((d: any, idx: number) => {
+                  const max = Math.max(...timeline.map((t: any) => t.count), 1);
+                  return (
+                    <div key={idx} className="w-3 bg-white/10 rounded-t" style={{height: `${(d.count/max)*100}%`}} />
+                  );
+                })}
+              </div>
+            </div>
           </div>
           {genreDist.length > 0 ? (
             <div className="space-y-3">
               {genreDist.slice(0, 8).map((genre: any) => (
                 <div key={genre.name} className="flex items-center gap-3">
-                  <span className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate">
+                  <a href={`/movies/genres/${String(genre.name).toLowerCase().replace(/\s+/g, '-')}`} className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate hover:underline">
                     {genre.name}
-                  </span>
+                  </a>
                   <div className="flex-1 h-6 bg-surface-3 rounded-lg overflow-hidden">
                     <div
                       className="h-full rounded-lg bg-gradient-to-r from-gold/60 to-gold/30 transition-all duration-700"
@@ -315,64 +326,33 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Activity timeline */}
-      {timeline.length > 0 && (
-        <div className="px-6 md:px-10 lg:px-20 mb-10">
-          <div className="glass-card rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Clock className="w-4 h-4 text-gold" />
-              <h2 className="text-lg font-bold font-display">Activity (Last 30 Days)</h2>
-            </div>
-            <div className="flex items-end gap-1 h-32">
-              {timeline.map((day: any) => {
-                const maxCount = Math.max(...timeline.map((d: any) => d.count), 1);
-                const height = (day.count / maxCount) * 100;
-                return (
-                  <div
-                    key={day.date}
-                    className="flex-1 group relative"
-                    title={`${day.date}: ${day.count} interactions`}
-                  >
-                    <div
-                      className="w-full bg-gradient-to-t from-gold/50 to-gold/20 rounded-t transition-all hover:from-gold/70 hover:to-gold/40"
-                      style={{ height: `${Math.max(height, 4)}%` }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-between text-[10px] text-white/15 mt-2">
-              <span>{timeline[0]?.date}</span>
-              <span>{timeline[timeline.length - 1]?.date}</span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Recent activity as carousel (views first) */}
       {recent.length > 0 && (
         <div className="px-6 md:px-10 lg:px-20">
           <MovieCarousel
             title="Recent Activity"
-            subtitle="Your latest interactions (views shown)"
-            icon={<Sparkles className="w-4 h-4 text-gold" />}
-            movies={recent
+            subtitle="Your latest unique movie views"
+            icon={<Clock className="w-4 h-4 text-gold" />}
+            movies={Array.from(new Map(recent
               .filter((r: any) => r.interaction_type === "view")
-              .map((r: any) => ({
-                id: r.id,
-                tmdb_id: r.movie_tmdb_id,
-                title: r.movie_title,
-                poster_url: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null),
-                poster_url_small: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w185${r.poster_path}` : null),
-                overview: "",
-                release_date: "",
-                year: null,
-                vote_average: 0,
-                vote_count: 0,
-                popularity: 0,
-                genres: [],
-                runtime: null,
-              }))}
+              .map((r: any) => [r.movie_tmdb_id, r])
+              .reverse()
+            ).values()).map((r: any) => ({
+              id: r.id,
+              tmdb_id: r.movie_tmdb_id,
+              title: r.movie_title,
+              poster_url: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null),
+              poster_url_small: r.poster_url || (r.poster_path ? `https://image.tmdb.org/t/p/w185${r.poster_path}` : null),
+              overview: "",
+              release_date: "",
+              year: null,
+              vote_average: 0,
+              vote_count: 0,
+              popularity: 0,
+              genres: [],
+              runtime: null,
+            }))}
           />
         </div>
       )}
