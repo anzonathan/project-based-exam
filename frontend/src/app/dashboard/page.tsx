@@ -312,35 +312,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Preference scores */}
-        <div className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <TrendingUp className="w-4 h-4 text-gold" />
-            <h2 className="text-lg font-bold font-display">Preference Scores</h2>
-          </div>
-          {prefScores.length > 0 ? (
-            <div className="space-y-3">
-              {prefScores.slice(0, 8).map((pref: any) => (
-                <div key={pref.name} className="flex items-center gap-3">
-                  <span className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate">
-                    {pref.name}
-                  </span>
-                  <div className="flex-1 h-6 bg-surface-3 rounded-lg overflow-hidden">
-                    <div
-                      className="h-full rounded-lg bg-gradient-to-r from-emerald-500/60 to-emerald-500/30 transition-all duration-700"
-                      style={{ width: `${(pref.weight / maxPrefWeight) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-[12px] text-white/30 w-10 font-mono">{pref.weight}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-white/20 text-center py-8">
-              Interact with movies to build your preference profile
-            </p>
-          )}
-        </div>
+
       </div>
 
       {/* Activity timeline */}
