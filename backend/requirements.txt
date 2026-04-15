@@ -11,3 +11,4 @@ requests>=2.31
 redis>=7.3.0
 gunicorn>=22.0
 python-dotenv>=1.0
+drf-yasg
