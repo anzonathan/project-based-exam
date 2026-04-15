@@ -4,10 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Search, Menu, X, Film, Compass, Star, Clapperboard,
-  Sparkles, BarChart3, User, LogOut, LogIn, ArrowLeftRight,
+  Sparkles, BarChart3, LogOut, LogIn, ArrowLeftRight, KeyRound,
 } from "lucide-react";
 import SearchModal from "@/components/SearchModal";
 import AuthModal from "@/components/AuthModal";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Navbar() {
@@ -16,6 +17,13 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    setUserMenuOpen(false);
+    setMenuOpen(false);
+  };
 
   const navLinks = [
     { href: "/search", label: "Discover", icon: Compass },
@@ -112,7 +120,17 @@ export default function Navbar() {
                           Dashboard
                         </Link>
                         <button
-                          onClick={() => { logout(); setUserMenuOpen(false); }}
+                          onClick={() => {
+                            setPasswordModalOpen(true);
+                            setUserMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                          Change password
+                        </button>
+                        <button
+                          onClick={handleLogout}
                           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-all"
                         >
                           <LogOut className="w-4 h-4" />
@@ -157,13 +175,30 @@ export default function Navbar() {
               </Link>
             ))}
             {isAuthenticated && (
-              <Link
-                href="/dashboard"
-                className="block text-sm text-white/50 hover:text-white py-2.5 px-3 rounded-lg hover:bg-white/5"
-                onClick={() => setMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/dashboard"
+                  className="block text-sm text-white/50 hover:text-white py-2.5 px-3 rounded-lg hover:bg-white/5"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    setPasswordModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left text-sm text-white/50 hover:text-white py-2.5 px-3 rounded-lg hover:bg-white/5"
+                >
+                  Change password
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-sm text-red-400/80 hover:text-red-400 py-2.5 px-3 rounded-lg hover:bg-red-500/5"
+                >
+                  Sign out
+                </button>
+              </>
             )}
           </div>
         )}
@@ -171,6 +206,7 @@ export default function Navbar() {
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} />
     </>
   );
 }
