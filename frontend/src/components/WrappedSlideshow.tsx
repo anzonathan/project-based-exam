@@ -14,6 +14,14 @@ export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // Build slides early so hooks are stable across renders
+  const slides: Array<{ type: string; data?: any }> = [];
+  if (wrapped) {
+    slides.push({ type: "intro", data: wrapped });
+    slides.push({ type: "genres", data: wrapped.top_genres });
+    wrapped.top_movies.forEach((m) => slides.push({ type: "movie", data: m }));
+  }
+
   useEffect(() => {
     if (isOpen) setIndex(0);
   }, [isOpen]);
@@ -22,20 +30,23 @@ export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
     function onKey(e: KeyboardEvent) {
       if (!isOpen) return;
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % slides.length);
-      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + slides.length) % slides.length);
+      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % (slides.length || 1));
+      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + (slides.length || 1)) % (slides.length || 1));
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, slides.length]);
+
+  // Autoplay (4s interval) when open and not paused
+  useEffect(() => {
+    if (!isOpen) return;
+    if (paused) return;
+    if (!slides.length) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 4000);
+    return () => clearInterval(id);
+  }, [isOpen, paused, slides.length]);
 
   if (!isOpen || !wrapped) return null;
-
-  // Build slides: intro, genres, then each top movie
-  const slides: Array<{ type: string; data?: any }> = [];
-  slides.push({ type: "intro", data: wrapped });
-  slides.push({ type: "genres", data: wrapped.top_genres });
-  wrapped.top_movies.forEach((m) => slides.push({ type: "movie", data: m }));
 
   const clampedIndex = Math.max(0, Math.min(index, slides.length - 1));
 
@@ -45,14 +56,6 @@ export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
   function prev() {
     setIndex((i) => (i - 1 + slides.length) % slides.length);
   }
-
-  // Autoplay (4s interval) when open and not paused
-  useEffect(() => {
-    if (!isOpen) return;
-    if (paused) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 4000);
-    return () => clearInterval(id);
-  }, [isOpen, paused, slides.length]);
 
   const slide = slides[clampedIndex];
 
