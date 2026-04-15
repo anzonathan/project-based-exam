@@ -39,12 +39,14 @@ export default function DashboardPage() {
         const genreMap = new Map(genres.map(g => [g.tmdb_id, g.name]));
         data.genre_distribution = data.genre_distribution.map((gd: any) => ({
           ...gd,
-          name: genreMap.get(gd.tmdb_id) || gd.name,
+          tmdb_id: typeof gd.tmdb_id === 'string' ? parseInt(gd.tmdb_id, 10) : gd.tmdb_id,
+          name: genreMap.get(typeof gd.tmdb_id === 'string' ? parseInt(gd.tmdb_id, 10) : gd.tmdb_id) || gd.name,
         }));
         if (data.wrapped?.top_genres) {
           data.wrapped.top_genres = data.wrapped.top_genres.map((gd: any) => ({
             ...gd,
-            name: genreMap.get(gd.tmdb_id) || gd.name,
+            tmdb_id: typeof gd.tmdb_id === 'string' ? parseInt(gd.tmdb_id, 10) : gd.tmdb_id,
+            name: genreMap.get(typeof gd.tmdb_id === 'string' ? parseInt(gd.tmdb_id, 10) : gd.tmdb_id) || gd.name,
           }));
         }
       } catch (err) {
