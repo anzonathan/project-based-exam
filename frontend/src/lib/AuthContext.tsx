@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { authAPI, setTokens, loadTokens, clearTokens } from "@/lib/api";
 import type { User } from "@/types/movie";
 
@@ -29,6 +30,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTokens();
     }
     setUser(null);
-  }, []);
+    router.push("/");
+  }, [router]);
 
   return (
     <AuthContext.Provider
