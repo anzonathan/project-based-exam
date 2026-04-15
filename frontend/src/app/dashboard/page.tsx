@@ -33,6 +33,23 @@ export default function DashboardPage() {
   async function fetchDashboard() {
     try {
       const data = await recommendationsAPI.getDashboard();
+      // If genre names are placeholders like "Genre 878", try to replace with real names from genres endpoint
+      try {
+        const genres = await genresAPI.list();
+        const genreMap = new Map(genres.map(g => [g.tmdb_id, g.name]));
+        data.genre_distribution = data.genre_distribution.map((gd: any) => ({
+          ...gd,
+          name: genreMap.get(gd.tmdb_id) || gd.name,
+        }));
+        if (data.wrapped?.top_genres) {
+          data.wrapped.top_genres = data.wrapped.top_genres.map((gd: any) => ({
+            ...gd,
+            name: genreMap.get(gd.tmdb_id) || gd.name,
+          }));
+        }
+      } catch (err) {
+        // ignore genre fetch failures
+      }
       setStats(data);
     } catch (err) {
       console.error("Dashboard error:", err);
