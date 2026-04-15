@@ -224,6 +224,8 @@ export interface UserInteraction {
   user: number;
   movie_tmdb_id: number;
   movie_title: string;
+  poster_path: string;
+  poster_url: string | null;
   interaction_type: "view" | "like" | "dislike" | "watchlist" | "watched" | "search";
   genre_ids: number[];
   rating: number | null;
@@ -264,6 +266,10 @@ export interface DashboardStats {
   preference_scores: PreferenceScore[];
   activity_timeline: ActivityEntry[];
   recent_activity: UserInteraction[];
+  liked_movies: UserInteraction[];
+  disliked_movies: UserInteraction[];
+  watched_movies: UserInteraction[];
+  watchlist_items: WatchlistItem[];
 }
 
 // Movie Discovery Types

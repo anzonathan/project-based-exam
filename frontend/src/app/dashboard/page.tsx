@@ -4,11 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   BarChart3, Heart, ThumbsDown, Eye, Bookmark, Star,
-  TrendingUp, Clock, LogIn, Sparkles, Film
+  TrendingUp, Clock, LogIn, Sparkles, Film, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { recommendationsAPI } from "@/lib/api";
-import type { DashboardStats, DashboardSummary, GenreDistribution, PreferenceScore, ActivityEntry, UserInteraction } from "@/types/movie";
+import MovieCarousel from "@/components/MovieCarousel";
+import type { 
+  DashboardStats, DashboardSummary, GenreDistribution, 
+  PreferenceScore, ActivityEntry, UserInteraction, MovieCompact,
+  WatchlistItem
+} from "@/types/movie";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -98,10 +103,53 @@ export default function DashboardPage() {
     { label: "Watchlist", value: summary.watchlist_total || 0, icon: Bookmark, color: "text-gold", bg: "from-gold/10 to-amber-600/5" },
   ];
 
+  // Map interactions to MovieCompact for carousels
+  const mapToMovieCompact = (items: UserInteraction[]): MovieCompact[] => {
+    return items.map(item => ({
+      id: item.id,
+      tmdb_id: item.movie_tmdb_id,
+      title: item.movie_title,
+      poster_url: item.poster_url,
+      poster_url_small: item.poster_url,
+      vote_average: 0,
+      vote_count: 0,
+      popularity: 0,
+      overview: "",
+      release_date: "",
+      year: null,
+      genres: [],
+      runtime: null,
+      genre_ids: item.genre_ids
+    }));
+  };
+
+  const mapWatchlistToMovieCompact = (items: WatchlistItem[]): MovieCompact[] => {
+    return items.map(item => ({
+      id: item.id,
+      tmdb_id: item.movie_tmdb_id,
+      title: item.movie_title,
+      poster_url: (item as any).poster_url || (item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null),
+      poster_url_small: (item as any).poster_url || (item.poster_path ? `https://image.tmdb.org/t/p/w185${item.poster_path}` : null),
+      vote_average: 0,
+      vote_count: 0,
+      popularity: 0,
+      overview: "",
+      release_date: "",
+      year: null,
+      genres: [],
+      runtime: null
+    }));
+  };
+
+  const likedMovies = mapToMovieCompact(stats?.liked_movies || []);
+  const watchedMovies = mapToMovieCompact(stats?.watched_movies || []);
+  const dislikedMovies = mapToMovieCompact(stats?.disliked_movies || []);
+  const watchlistMovies = mapWatchlistToMovieCompact(stats?.watchlist_items || []);
+
   return (
-    <div className="pt-24 pb-20 px-6 md:px-10 lg:px-20 max-w-[1440px] mx-auto">
+    <div className="pt-24 pb-20 max-w-[1440px] mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-10">
+      <div className="px-6 md:px-10 lg:px-20 flex items-center gap-4 mb-10">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-gold-dim flex items-center justify-center shadow-lg shadow-gold/10">
           <BarChart3 className="w-5 h-5 text-surface-0" />
         </div>
@@ -116,7 +164,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Statistics cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="px-6 md:px-10 lg:px-20 grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="glass-card rounded-xl p-5 relative overflow-hidden">
             <div className={`absolute inset-0 bg-gradient-to-br ${bg}`} />
@@ -129,7 +177,72 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+      {/* Watchlist Detailed Stats */}
+      {summary.watchlist_total > 0 && (
+        <div className="px-6 md:px-10 lg:px-20 mb-10">
+          <div className="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-gold">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-gold" />
+              <div>
+                <p className="text-sm font-semibold">Watchlist Progress</p>
+                <p className="text-xs text-white/30">You&apos;ve watched {summary.watchlist_watched} out of {summary.watchlist_total} saved movies.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-32 h-2 bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gold transition-all duration-1000" 
+                  style={{ width: `${(summary.watchlist_watched / summary.watchlist_total) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm font-mono text-gold font-bold">
+                {Math.round((summary.watchlist_watched / summary.watchlist_total) * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Movie Carousels */}
+      <div className="space-y-12 mb-16">
+        {watchlistMovies.length > 0 && (
+          <MovieCarousel 
+            title="Your Watchlist" 
+            subtitle="Movies you've saved to watch later"
+            icon={<Bookmark className="w-4 h-4 text-gold" />}
+            movies={watchlistMovies}
+          />
+        )}
+
+        {likedMovies.length > 0 && (
+          <MovieCarousel 
+            title="Liked Movies" 
+            subtitle="Your all-time favorites"
+            icon={<Heart className="w-4 h-4 text-emerald-400" />}
+            movies={likedMovies}
+          />
+        )}
+
+        {watchedMovies.length > 0 && (
+          <MovieCarousel 
+            title="Recently Watched" 
+            subtitle="Movies you've already seen"
+            icon={<Eye className="w-4 h-4 text-blue-400" />}
+            movies={watchedMovies}
+          />
+        )}
+
+        {dislikedMovies.length > 0 && (
+          <MovieCarousel 
+            title="Disliked Movies" 
+            subtitle="Movies you didn't enjoy"
+            icon={<ThumbsDown className="w-4 h-4 text-red-400" />}
+            movies={dislikedMovies}
+          />
+        )}
+      </div>
+
+      <div className="px-6 md:px-10 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         {/* Genre distribution */}
         <div className="glass-card rounded-xl p-6">
           <div className="flex items-center gap-2 mb-5">
@@ -193,83 +306,89 @@ export default function DashboardPage() {
 
       {/* Activity timeline */}
       {timeline.length > 0 && (
-        <div className="glass-card rounded-xl p-6 mb-10">
-          <div className="flex items-center gap-2 mb-5">
-            <Clock className="w-4 h-4 text-gold" />
-            <h2 className="text-lg font-bold font-display">Activity (Last 30 Days)</h2>
-          </div>
-          <div className="flex items-end gap-1 h-32">
-            {timeline.map((day: any) => {
-              const maxCount = Math.max(...timeline.map((d: any) => d.count), 1);
-              const height = (day.count / maxCount) * 100;
-              return (
-                <div
-                  key={day.date}
-                  className="flex-1 group relative"
-                  title={`${day.date}: ${day.count} interactions`}
-                >
+        <div className="px-6 md:px-10 lg:px-20 mb-10">
+          <div className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Clock className="w-4 h-4 text-gold" />
+              <h2 className="text-lg font-bold font-display">Activity (Last 30 Days)</h2>
+            </div>
+            <div className="flex items-end gap-1 h-32">
+              {timeline.map((day: any) => {
+                const maxCount = Math.max(...timeline.map((d: any) => d.count), 1);
+                const height = (day.count / maxCount) * 100;
+                return (
                   <div
-                    className="w-full bg-gradient-to-t from-gold/50 to-gold/20 rounded-t transition-all hover:from-gold/70 hover:to-gold/40"
-                    style={{ height: `${Math.max(height, 4)}%` }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex justify-between text-[10px] text-white/15 mt-2">
-            <span>{timeline[0]?.date}</span>
-            <span>{timeline[timeline.length - 1]?.date}</span>
+                    key={day.date}
+                    className="flex-1 group relative"
+                    title={`${day.date}: ${day.count} interactions`}
+                  >
+                    <div
+                      className="w-full bg-gradient-to-t from-gold/50 to-gold/20 rounded-t transition-all hover:from-gold/70 hover:to-gold/40"
+                      style={{ height: `${Math.max(height, 4)}%` }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between text-[10px] text-white/15 mt-2">
+              <span>{timeline[0]?.date}</span>
+              <span>{timeline[timeline.length - 1]?.date}</span>
+            </div>
           </div>
         </div>
       )}
 
       {/* Recent activity */}
       {recent.length > 0 && (
-        <div className="glass-card rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <Sparkles className="w-4 h-4 text-gold" />
-            <h2 className="text-lg font-bold font-display">Recent Activity</h2>
-          </div>
-          <div className="space-y-2">
-            {recent.map((item: any, i: number) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]"
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                    item.interaction_type === "like" ? "bg-emerald-500/15 text-emerald-400" :
-                    item.interaction_type === "dislike" ? "bg-red-500/15 text-red-400" :
-                    item.interaction_type === "watched" ? "bg-blue-500/15 text-blue-400" :
-                    "bg-white/5 text-white/40"
-                  }`}>
-                    {item.interaction_type}
+        <div className="px-6 md:px-10 lg:px-20">
+          <div className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Sparkles className="w-4 h-4 text-gold" />
+              <h2 className="text-lg font-bold font-display">Recent Activity</h2>
+            </div>
+            <div className="space-y-2">
+              {recent.map((item: any, i: number) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
+                      item.interaction_type === "like" ? "bg-emerald-500/15 text-emerald-400" :
+                      item.interaction_type === "dislike" ? "bg-red-500/15 text-red-400" :
+                      item.interaction_type === "watched" ? "bg-blue-500/15 text-blue-400" :
+                      "bg-white/5 text-white/40"
+                    }`}>
+                      {item.interaction_type}
+                    </span>
+                    <span className="text-sm text-white/70">{item.movie_title}</span>
+                  </div>
+                  <span className="text-[11px] text-white/20">
+                    {new Date(item.created_at).toLocaleDateString()}
                   </span>
-                  <span className="text-sm text-white/70">{item.movie_title}</span>
                 </div>
-                <span className="text-[11px] text-white/20">
-                  {new Date(item.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Empty state */}
       {summary.total_interactions === 0 && (
-        <div className="text-center py-16 glass-card rounded-2xl">
-          <BarChart3 className="w-10 h-10 text-gold/20 mx-auto mb-4" />
-          <h3 className="text-xl font-bold font-display mb-2">No activity yet</h3>
-          <p className="text-sm text-white/30 mb-6 max-w-sm mx-auto">
-            Start exploring movies, liking your favorites, and building your watchlist to see your stats here.
-          </p>
-          <Link
-            href="/mood"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-gold to-gold-dim text-surface-0 font-semibold text-sm"
-          >
-            <Sparkles className="w-4 h-4" /> Pick a Mood
-          </Link>
+        <div className="px-6 md:px-10 lg:px-20 mt-10">
+          <div className="text-center py-16 glass-card rounded-2xl">
+            <BarChart3 className="w-10 h-10 text-gold/20 mx-auto mb-4" />
+            <h3 className="text-xl font-bold font-display mb-2">No activity yet</h3>
+            <p className="text-sm text-white/30 mb-6 max-w-sm mx-auto">
+              Start exploring movies, liking your favorites, and building your watchlist to see your stats here.
+            </p>
+            <Link
+              href="/mood"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-gold to-gold-dim text-surface-0 font-semibold text-sm"
+            >
+              <Sparkles className="w-4 h-4" /> Pick a Mood
+            </Link>
+          </div>
         </div>
       )}
     </div>

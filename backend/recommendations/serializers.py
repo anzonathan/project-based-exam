@@ -3,13 +3,20 @@ from .models import UserMovieInteraction, UserGenrePreference, Watchlist
 
 
 class UserMovieInteractionSerializer(serializers.ModelSerializer):
+    poster_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UserMovieInteraction
         fields = [
-            "id", "movie_tmdb_id", "movie_title", "interaction_type",
-            "genre_ids", "rating", "created_at",
+            "id", "movie_tmdb_id", "movie_title", "poster_path", "poster_url",
+            "interaction_type", "genre_ids", "rating", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_poster_url(self, obj):
+        if obj.poster_path:
+            return f"https://image.tmdb.org/t/p/w500{obj.poster_path}"
+        return None
 
 
 class UserGenrePreferenceSerializer(serializers.ModelSerializer):

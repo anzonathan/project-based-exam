@@ -237,6 +237,7 @@ export const recommendationsAPI = {
   trackInteraction: (data: {
     movie_tmdb_id: number;
     movie_title: string;
+    poster_path?: string;
     interaction_type: string;
     genre_ids?: number[];
     rating?: number;

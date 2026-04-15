@@ -71,7 +71,7 @@ class MovieCompactSerializer(serializers.ModelSerializer):
         fields = [
             "id", "tmdb_id", "title", "overview", "release_date", "year",
             "vote_average", "vote_count", "popularity", "poster_url",
-            "poster_url_small", "genres", "runtime",
+            "poster_url_small", "genres", "runtime", "poster_path",
         ]
 
     def get_year(self, obj):
@@ -102,7 +102,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "trailer_url", "trailer_embed_url", "trailer_key",
             "budget", "revenue", "status", "homepage",
             "genres", "directors", "cast", "watch_providers",
-            "wikipedia_url", "wikipedia_summary",
+            "wikipedia_url", "wikipedia_summary", "poster_path", "backdrop_path",
         ]
 
     def get_cast(self, obj):

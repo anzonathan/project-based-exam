@@ -7,10 +7,11 @@ import Link from "next/link";
 import {
   Star, Clock, Calendar, Play, ExternalLink, ArrowLeft,
   Globe, Film, Users, ThumbsUp, ThumbsDown, Bookmark,
-  BookmarkCheck, Heart, Sparkles, ChevronRight,
+  BookmarkCheck, Heart, Sparkles, ChevronRight, Eye, CheckCircle
 } from "lucide-react";
 import MovieCarousel from "@/components/MovieCarousel";
-import { moviesAPI } from "@/lib/api";
+import { moviesAPI, recommendationsAPI } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { fetchTmdbMovieBundle } from "@/lib/tmdbMovieRaw";
 import {
   getLikedMovies,
@@ -27,6 +28,7 @@ import type { MovieCompact, LocalLikedMovie, LocalWatchlistItem, TMDBMovieDetail
 export default function MovieDetailPage() {
   const params = useParams();
   const tmdbId = Number(params.id);
+  const { isAuthenticated } = useAuth();
 
   const [movie, setMovie] = useState<TMDBMovieDetail | null>(null);
   const [recommendations, setRecommendations] = useState<MovieCompact[]>([]);
@@ -38,6 +40,7 @@ export default function MovieDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isWatched, setIsWatched] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
   // Initializing like/bookmark state
@@ -49,8 +52,25 @@ export default function MovieDetailPage() {
     setIsLiked(likedEntry?.type === "like");
     setIsDisliked(likedEntry?.type === "dislike");
     setIsBookmarked(watchlist.some((m) => m.id === tmdbId));
+    
+    // For watched, we can check local storage as well if we want, 
+    // but for now let's just use a local state that might be synced with API later
+    // In a real app, we'd fetch the user's interaction state for this movie from the backend.
     setLikeCount(liked.filter((m) => m.type === "like").length);
   }, [tmdbId]);
+
+  // Track view interaction
+  useEffect(() => {
+    if (isAuthenticated && movie && tmdbId) {
+      recommendationsAPI.trackInteraction({
+        movie_tmdb_id: tmdbId,
+        movie_title: movie.title,
+        poster_path: movie.poster_path || "",
+        interaction_type: "view",
+        genre_ids: (movie.genres || []).map(g => g.id)
+      }).catch(console.error);
+    }
+  }, [isAuthenticated, movie, tmdbId]);
 
   // Fetching movie data plus recommendations
   useEffect(() => {
@@ -97,7 +117,7 @@ export default function MovieDetailPage() {
   }
 
   // Like / Dislike / Bookmark handlers
-  const handleLike = useCallback(() => {
+  const handleLike = useCallback(async () => {
     const liked = getLikedMovies();
     const filtered = liked.filter((m) => m.id !== tmdbId);
 
@@ -120,10 +140,20 @@ export default function MovieDetailPage() {
       setIsLiked(true);
       setIsDisliked(false);
       setLikeCount((c) => c + 1);
-    }
-  }, [tmdbId, isLiked, movie]);
 
-  const handleDislike = useCallback(() => {
+      if (isAuthenticated && movie) {
+        await recommendationsAPI.trackInteraction({
+          movie_tmdb_id: tmdbId,
+          movie_title: movie.title,
+          poster_path: movie.poster_path || "",
+          interaction_type: "like",
+          genre_ids: (movie.genres || []).map(g => g.id)
+        });
+      }
+    }
+  }, [tmdbId, isLiked, movie, isAuthenticated]);
+
+  const handleDislike = useCallback(async () => {
     const liked = getLikedMovies();
     const filtered = liked.filter((m) => m.id !== tmdbId);
 
@@ -142,15 +172,29 @@ export default function MovieDetailPage() {
       saveLikedMovies([...filtered, newDislike]);
       setIsDisliked(true);
       setIsLiked(false);
-    }
-  }, [tmdbId, isDisliked, movie]);
 
-  const handleBookmark = useCallback(() => {
+      if (isAuthenticated && movie) {
+        await recommendationsAPI.trackInteraction({
+          movie_tmdb_id: tmdbId,
+          movie_title: movie.title,
+          poster_path: movie.poster_path || "",
+          interaction_type: "dislike",
+          genre_ids: (movie.genres || []).map(g => g.id)
+        });
+      }
+    }
+  }, [tmdbId, isDisliked, movie, isAuthenticated]);
+
+  const handleBookmark = useCallback(async () => {
     const watchlist = getWatchlist();
 
     if (isBookmarked) {
       saveWatchlist(watchlist.filter((m) => m.id !== tmdbId));
       setIsBookmarked(false);
+      
+      // We don't have a simple "remove from watchlist" by tmdb_id in API easily here without fetching first, 
+      // but we can track it as an interaction if we want.
+      // Or we could call removeFromWatchlist if we had the ID.
     } else {
       const newBookmark: LocalWatchlistItem = {
         id: tmdbId,
@@ -160,8 +204,33 @@ export default function MovieDetailPage() {
       };
       saveWatchlist([...watchlist, newBookmark]);
       setIsBookmarked(true);
+
+      if (isAuthenticated && movie) {
+        await recommendationsAPI.addToWatchlist({
+          movie_tmdb_id: tmdbId,
+          movie_title: movie.title,
+          poster_path: movie.poster_path || "",
+        });
+      }
     }
-  }, [tmdbId, isBookmarked, movie]);
+  }, [tmdbId, isBookmarked, movie, isAuthenticated]);
+
+  const handleWatched = useCallback(async () => {
+    if (isWatched) {
+      setIsWatched(false);
+    } else {
+      setIsWatched(true);
+      if (isAuthenticated && movie) {
+        await recommendationsAPI.trackInteraction({
+          movie_tmdb_id: tmdbId,
+          movie_title: movie.title,
+          poster_path: movie.poster_path || "",
+          interaction_type: "watched",
+          genre_ids: (movie.genres || []).map(g => g.id)
+        });
+      }
+    }
+  }, [tmdbId, isWatched, movie, isAuthenticated]);
 
   // Loading state
   if (loading) {
@@ -245,7 +314,7 @@ export default function MovieDetailPage() {
               <Image src={imgUrl} alt={title} width={260} height={390} className="w-full h-full object-cover" unoptimized />
             </div>
 
-            {/* Like / Dislike / Bookmark Buttons */}
+            {/* Like / Dislike / Bookmark / Watched Buttons */}
             <div className="flex items-center gap-2 mt-4">
               <button
                 onClick={handleLike}
@@ -285,6 +354,18 @@ export default function MovieDetailPage() {
                 ) : (
                   <Bookmark className="w-4 h-4" />
                 )}
+              </button>
+
+              <button
+                onClick={handleWatched}
+                className={`group w-12 flex items-center justify-center py-3 rounded-xl border transition-all duration-300 ${
+                  isWatched
+                    ? "bg-blue-500/15 border-blue-500/30 text-blue-400"
+                    : "glass-card text-white/50 hover:text-blue-400 hover:border-blue-500/20"
+                }`}
+                title={isWatched ? "Mark as unwatched" : "Mark as watched"}
+              >
+                <Eye className={`w-4 h-4 ${isWatched ? "fill-blue-400" : ""}`} />
               </button>
             </div>
 

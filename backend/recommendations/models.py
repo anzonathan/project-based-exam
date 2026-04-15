@@ -19,6 +19,7 @@ class UserMovieInteraction(models.Model):
     )
     movie_tmdb_id = models.IntegerField(db_index=True)
     movie_title = models.CharField(max_length=500, blank=True, default="")
+    poster_path = models.CharField(max_length=255, blank=True, default="")
     interaction_type = models.CharField(max_length=20, choices=InteractionType.choices)
     genre_ids = models.JSONField(default=list, blank=True, help_text="Genre IDs at time of interaction")
     rating = models.FloatField(null=True, blank=True, help_text="User rating 1-10")

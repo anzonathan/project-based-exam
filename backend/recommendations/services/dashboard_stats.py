@@ -91,6 +91,15 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
     recent = interactions.order_by("-created_at")[:DASHBOARD_RECENT_INTERACTIONS_LIMIT]
     recent_data = UserMovieInteractionSerializer(recent, many=True).data
 
+    # Detailed lists for mapping to dashboard
+    liked_movies = interactions.filter(interaction_type="like").order_by("-created_at")[:10]
+    disliked_movies = interactions.filter(interaction_type="dislike").order_by("-created_at")[:10]
+    watched_movies = interactions.filter(interaction_type="watched").order_by("-created_at")[:10]
+    
+    # Watchlist items
+    from recommendations.serializers import WatchlistSerializer
+    watchlist_items = WatchlistSerializer(watchlist.order_by("-added_at")[:10], many=True).data
+
     avg_rating = interactions.filter(rating__isnull=False).aggregate(avg=Avg("rating"))["avg"]
 
     return {
@@ -108,4 +117,8 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         "preference_scores": preference_scores,
         "activity_timeline": activity_timeline,
         "recent_activity": recent_data,
+        "liked_movies": UserMovieInteractionSerializer(liked_movies, many=True).data,
+        "disliked_movies": UserMovieInteractionSerializer(disliked_movies, many=True).data,
+        "watched_movies": UserMovieInteractionSerializer(watched_movies, many=True).data,
+        "watchlist_items": watchlist_items,
     }
