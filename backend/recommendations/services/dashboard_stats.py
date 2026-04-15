@@ -67,15 +67,15 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         genres_qs = Genre.objects.filter(tmdb_id__in=gid_set)
         genre_map = {g.tmdb_id: g.name for g in genres_qs}
         for gid, count in genre_counter.most_common(DASHBOARD_GENRE_DISTRIBUTION_LIMIT):
-            name = genre_map.get(gid)
+            # Ensure gid is int for map lookup
+            try:
+                gid_int = int(gid)
+            except Exception:
+                gid_int = gid
+            name = genre_map.get(gid_int)
             if name is None:
-                try:
-                    name = genre_map.get(int(gid))
-                except Exception:
-                    name = None
-            if name is None:
-                name = f"Genre {gid}"
-            genre_distribution.append({"name": name, "tmdb_id": gid, "count": count})
+                name = f"Genre {gid_int}"
+            genre_distribution.append({"name": name, "tmdb_id": gid_int, "count": count})
     else:
         genre_distribution = []
 
@@ -136,15 +136,14 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         genres_qs = Genre.objects.filter(tmdb_id__in=gid_set)
         genre_map = {g.tmdb_id: g.name for g in genres_qs}
         for gid, count in year_genre_counter.most_common(5):
-            name = genre_map.get(gid)
+            try:
+                gid_int = int(gid)
+            except Exception:
+                gid_int = gid
+            name = genre_map.get(gid_int)
             if name is None:
-                try:
-                    name = genre_map.get(int(gid))
-                except Exception:
-                    name = None
-            if name is None:
-                name = f"Genre {gid}"
-            top_genres.append({"name": name, "tmdb_id": gid, "count": count})
+                name = f"Genre {gid_int}"
+            top_genres.append({"name": name, "tmdb_id": gid_int, "count": count})
     else:
         top_genres = []
 
