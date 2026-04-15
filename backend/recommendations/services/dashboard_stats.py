@@ -55,17 +55,29 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         for gid in interaction.genre_ids:
             genre_counter[gid] += 1
 
+    # Resolve genre names in a single query to avoid per-item DB hits and handle string/int ids
     genre_distribution = []
-    for gid, count in genre_counter.most_common(DASHBOARD_GENRE_DISTRIBUTION_LIMIT):
-        try:
-            genre = Genre.objects.get(tmdb_id=gid)
-            genre_distribution.append(
-                {"name": genre.name, "tmdb_id": gid, "count": count}
-            )
-        except Genre.DoesNotExist:
-            genre_distribution.append(
-                {"name": f"Genre {gid}", "tmdb_id": gid, "count": count}
-            )
+    if genre_counter:
+        gid_set = set()
+        for gid in genre_counter.keys():
+            try:
+                gid_set.add(int(gid))
+            except Exception:
+                gid_set.add(gid)
+        genres_qs = Genre.objects.filter(tmdb_id__in=gid_set)
+        genre_map = {g.tmdb_id: g.name for g in genres_qs}
+        for gid, count in genre_counter.most_common(DASHBOARD_GENRE_DISTRIBUTION_LIMIT):
+            name = genre_map.get(gid)
+            if name is None:
+                try:
+                    name = genre_map.get(int(gid))
+                except Exception:
+                    name = None
+            if name is None:
+                name = f"Genre {gid}"
+            genre_distribution.append({"name": name, "tmdb_id": gid, "count": count})
+    else:
+        genre_distribution = []
 
     eng.compute_genre_preferences(user)
     prefs = UserGenrePreference.objects.filter(user=user).order_by("-weight")[
@@ -114,12 +126,27 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
             year_genre_counter[gid] += 1
 
     top_genres = []
-    for gid, count in year_genre_counter.most_common(5):
-        try:
-            genre = Genre.objects.get(tmdb_id=gid)
-            top_genres.append({"name": genre.name, "tmdb_id": gid, "count": count})
-        except Genre.DoesNotExist:
-            top_genres.append({"name": f"Genre {gid}", "tmdb_id": gid, "count": count})
+    if year_genre_counter:
+        gid_set = set()
+        for gid in year_genre_counter.keys():
+            try:
+                gid_set.add(int(gid))
+            except Exception:
+                gid_set.add(gid)
+        genres_qs = Genre.objects.filter(tmdb_id__in=gid_set)
+        genre_map = {g.tmdb_id: g.name for g in genres_qs}
+        for gid, count in year_genre_counter.most_common(5):
+            name = genre_map.get(gid)
+            if name is None:
+                try:
+                    name = genre_map.get(int(gid))
+                except Exception:
+                    name = None
+            if name is None:
+                name = f"Genre {gid}"
+            top_genres.append({"name": name, "tmdb_id": gid, "count": count})
+    else:
+        top_genres = []
 
     movie_counter = Counter()
     for interaction in interactions_year:

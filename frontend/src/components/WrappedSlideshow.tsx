@@ -12,6 +12,7 @@ interface Props {
 
 export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
   const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (isOpen) setIndex(0);
@@ -21,8 +22,8 @@ export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
     function onKey(e: KeyboardEvent) {
       if (!isOpen) return;
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex((i) => i + 1);
-      if (e.key === "ArrowLeft") setIndex((i) => i - 1);
+      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % slides.length);
+      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + slides.length) % slides.length);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -39,11 +40,19 @@ export default function WrappedSlideshow({ isOpen, onClose, wrapped }: Props) {
   const clampedIndex = Math.max(0, Math.min(index, slides.length - 1));
 
   function next() {
-    setIndex((i) => Math.min(i + 1, slides.length - 1));
+    setIndex((i) => (i + 1) % slides.length);
   }
   function prev() {
-    setIndex((i) => Math.max(i - 1, 0));
+    setIndex((i) => (i - 1 + slides.length) % slides.length);
   }
+
+  // Autoplay (4s interval) when open and not paused
+  useEffect(() => {
+    if (!isOpen) return;
+    if (paused) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 4000);
+    return () => clearInterval(id);
+  }, [isOpen, paused, slides.length]);
 
   const slide = slides[clampedIndex];
 
