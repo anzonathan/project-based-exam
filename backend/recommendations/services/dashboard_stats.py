@@ -135,6 +135,24 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
                 gid_set.add(gid)
         genres_qs = Genre.objects.filter(tmdb_id__in=gid_set)
         genre_map = {g.tmdb_id: g.name for g in genres_qs}
+
+        # Fetch missing genre names from TMDB as fallback and persist
+        missing = [int(gid) for gid in gid_set if int(gid) not in genre_map]
+        if missing:
+            try:
+                from movies.services.tmdb_service import TMDBService
+                tmdb = TMDBService()
+                tmdb_genres = tmdb.get_genres()
+                for g in tmdb_genres:
+                    gid_val = g.get("id")
+                    if gid_val in missing and gid_val not in genre_map:
+                        genre_map[gid_val] = g.get("name")
+                        # persist
+                        Genre.objects.update_or_create(tmdb_id=gid_val, defaults={"name": g.get("name"), "slug": g.get("name").lower().replace(' ', '-')})
+            except Exception:
+                # ignore external failures
+                pass
+
         for gid, count in year_genre_counter.most_common(5):
             try:
                 gid_int = int(gid)
