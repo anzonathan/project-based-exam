@@ -156,4 +156,5 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
         "disliked_movies": UserMovieInteractionSerializer(disliked_movies, many=True).data,
         "watched_movies": UserMovieInteractionSerializer(watched_movies, many=True).data,
         "watchlist_items": watchlist_items,
+        "wrapped": wrapped,
     }
