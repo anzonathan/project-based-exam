@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import MovieCard, { MovieCardSkeleton } from "@/components/MovieCard";
-import { genresAPI } from "@/lib/api";
+import { genresAPI, moviesAPI } from "@/lib/api";
 import type { MovieCompact } from "@/types/movie";
 
 function GenreContent() {
@@ -13,6 +13,7 @@ function GenreContent() {
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const genreId = searchParams.get("id");
+  const genreTmdbId = genreId ? Number(genreId) : NaN;
 
   const [movies, setMovies] = useState<MovieCompact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,19 +29,21 @@ function GenreContent() {
     async function fetchMovies() {
       setLoading(true);
       try {
-        // When an id query param is present, prefer server-side genre lookup via id
-        const idParam = genreId ? `?id=${genreId}` : "";
-        const data = await genresAPI.getMovies(slug, page);
+        const data = Number.isFinite(genreTmdbId)
+          ? await moviesAPI.discover({ genre: genreTmdbId, page, sort: "popularity.desc" })
+          : await genresAPI.getMovies(slug, page);
         setMovies(data.results || []);
         setTotalPages(data.total_pages || 1);
       } catch (err) {
         console.error(err);
+        setMovies([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     }
     fetchMovies();
-  }, [slug, page, genreId]);
+  }, [slug, page, genreTmdbId]);
 
   return (
     <div className="pt-24 pb-20 px-6 md:px-12 lg:px-20 max-w-[1400px] mx-auto">
