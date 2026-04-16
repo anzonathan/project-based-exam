@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { authAPI, setTokens, loadTokens, clearTokens } from "@/lib/api";
 import type { User } from "@/types/movie";
 
@@ -10,8 +9,13 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+    passwordConfirm: string
+  ) => Promise<void>;
+  logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -21,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: async () => {},
   register: async () => {},
-  logout: async () => {},
+  logout: () => {},
   refreshUser: async () => {},
 });
 
@@ -30,7 +34,6 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,21 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await refreshUser();
   }, [refreshUser]);
 
-  const register = useCallback(async (username: string, email: string, password: string) => {
-    await authAPI.register(username, email, password);
-    await authAPI.login(username, password);
-    await refreshUser();
-  }, [refreshUser]);
+  const register = useCallback(
+    async (
+      username: string,
+      email: string,
+      password: string,
+      passwordConfirm: string
+    ) => {
+      await authAPI.register(username, email, password, passwordConfirm);
+      await authAPI.login(username, password);
+      await refreshUser();
+    },
+    [refreshUser]
+  );
 
-  const logout = useCallback(async () => {
-    try {
-      await authAPI.logout();
-    } catch {
-      clearTokens();
-    }
+  const logout = useCallback(() => {
+    clearTokens();
     setUser(null);
-    router.push("/");
-  }, [router]);
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -96,7 +96,24 @@ async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    let errorMsg = `API error: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && typeof errorData === "object") {
+        // Handle DRF standard error format: {"field": ["Error block"]} or {"detail": "..."}
+        if (errorData.detail && typeof errorData.detail === "string") {
+          errorMsg = errorData.detail;
+        } else {
+          const values = Object.values(errorData).flat();
+          if (values.length > 0 && typeof values[0] === "string") {
+            errorMsg = values[0];
+          }
+        }
+      }
+    } catch {
+      // Ignore JSON parse error, fallback to generic message
+    }
+    throw new Error(errorMsg);
   }
 
   return response.json();
@@ -114,10 +131,20 @@ export const authAPI = {
     return tokens;
   },
 
-  register: async (username: string, email: string, password: string) => {
+  register: async (
+    username: string,
+    email: string,
+    password: string,
+    passwordConfirm: string
+  ) => {
     return apiFetch<User>("/users/register/", {
       method: "POST",
-      body: JSON.stringify({ username, email, password, password_confirm: password }),
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        password_confirm: passwordConfirm, // ✅ FIXED
+      }),
     });
   },
 
@@ -237,7 +264,6 @@ export const recommendationsAPI = {
   trackInteraction: (data: {
     movie_tmdb_id: number;
     movie_title: string;
-    poster_path?: string;
     interaction_type: string;
     genre_ids?: number[];
     rating?: number;
