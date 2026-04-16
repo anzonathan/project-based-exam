@@ -75,7 +75,13 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
             name = genre_map.get(gid_int)
             if name is None:
                 name = f"Genre {gid_int}"
-            genre_distribution.append({"name": name, "tmdb_id": gid_int, "count": count})
+            # include slug if available for reliable frontend linking
+            try:
+                gobj = Genre.objects.get(tmdb_id=gid_int)
+                slug_val = gobj.slug
+            except Genre.DoesNotExist:
+                slug_val = None
+            genre_distribution.append({"name": name, "tmdb_id": gid_int, "count": count, "slug": slug_val})
     else:
         genre_distribution = []
 

@@ -296,7 +296,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {genreDist.slice(0, 8).map((genre: any) => (
                 <div key={genre.name} className="flex items-center gap-3">
-                  <a href={`/genre/${String(genre.name).toLowerCase().replace(/\s+/g, '-')}${genre.tmdb_id ? `?id=${genre.tmdb_id}` : ''}`} className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate hover:underline">
+                  <a href={`/genre/${genre.slug || String(genre.name).toLowerCase().replace(/\s+/g, '-')}${genre.tmdb_id ? `?id=${genre.tmdb_id}` : ''}`} className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate hover:underline">
                     {genre.name}
                   </a>
                   <div className="flex-1 h-6 bg-surface-3 rounded-lg overflow-hidden">
