@@ -3,12 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight, Sparkles, Film, Heart, Share2, Check, Trophy, Medal } from "lucide-react";
 import type { Wrapped, WrappedTopMovie, WrappedTopGenre } from "@/types/movie";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 interface Props {
   isOpen: boolean;

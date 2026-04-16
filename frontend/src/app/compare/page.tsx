@@ -204,21 +204,35 @@ export default function ComparePage() {
 
   async function searchMovies(query: string, side: "A" | "B") {
     if (query.length < 2) {
-      side === "A" ? setResultsA([]) : setResultsB([]);
+      if (side === "A") {
+        setResultsA([]);
+      } else {
+        setResultsB([]);
+      }
       return;
     }
 
-    side === "A" ? setSearchingA(true) : setSearchingB(true);
+    if (side === "A") {
+      setSearchingA(true);
+    } else {
+      setSearchingB(true);
+    }
 
     try {
       const data = await moviesAPI.search(query);
-      side === "A"
-        ? setResultsA(data.results.slice(0, 5))
-        : setResultsB(data.results.slice(0, 5));
+      if (side === "A") {
+        setResultsA(data.results.slice(0, 5));
+      } else {
+        setResultsB(data.results.slice(0, 5));
+      }
     } catch {
       // ignore
     } finally {
-      side === "A" ? setSearchingA(false) : setSearchingB(false);
+      if (side === "A") {
+        setSearchingA(false);
+      } else {
+        setSearchingB(false);
+      }
     }
   }
 
