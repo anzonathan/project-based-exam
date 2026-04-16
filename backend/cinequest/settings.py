@@ -13,7 +13,18 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-secret-key-for-local-tes
 
 DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS','localhost,127.0.0.1').split(',')
+# Robustly parse environment lists (comma-separated strings)
+def get_env_list(var_name, default=""):
+    value = os.environ.get(var_name, default)
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1,cinequest.up.railway.app')
+
+# For convenience in development or specific cloud environments
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -104,9 +115,11 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
 }
 
-CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
-).split(",")
+CORS_ALLOWED_ORIGINS = get_env_list(
+    "CORS_ORIGINS", 
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,https://cinequest8.vercel.app,https://cinequest.up.railway.app"
+)
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 
 # TMDB API

@@ -163,6 +163,7 @@ export interface User {
   favorite_genres: number[];
   country_code: string;
   date_joined: string;
+  share_token: string;
 }
 
 export interface AuthTokens {
@@ -262,7 +263,13 @@ export interface DashboardSummary {
 
 export interface WrappedTopGenre { name: string; tmdb_id: number; count: number; }
 export interface WrappedTopMovie { tmdb_id: number; movie_title: string; poster_url: string | null; count: number; }
-export interface Wrapped { year: number; total_interactions_year: number; top_genres: WrappedTopGenre[]; top_movies: WrappedTopMovie[]; }
+export interface Wrapped { 
+  year: number; 
+  username?: string;
+  total_interactions_year: number; 
+  top_genres: WrappedTopGenre[]; 
+  top_movies: WrappedTopMovie[]; 
+}
 
 export interface DashboardStats {
   summary: DashboardSummary;

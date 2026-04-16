@@ -182,6 +182,7 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
 
     wrapped = {
         "year": now.year,
+        "username": user.username,
         "total_interactions_year": total_interactions_year,
         "top_genres": top_genres,
         "top_movies": top_movies,

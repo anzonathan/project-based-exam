@@ -200,7 +200,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Wrapped slideshow component */}
-      <WrappedSlideshow isOpen={showWrapped} onClose={() => setShowWrapped(false)} wrapped={stats?.wrapped} />
+      <WrappedSlideshow 
+        isOpen={showWrapped} 
+        onClose={() => setShowWrapped(false)} 
+        wrapped={stats?.wrapped} 
+        shareToken={user?.share_token}
+      />
 
       {/* Statistics cards */}
       <div className="px-6 md:px-10 lg:px-20 grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
