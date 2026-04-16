@@ -271,14 +271,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {dislikedMovies.length > 0 && (
-          <MovieCarousel 
-            title="Disliked Movies" 
-            subtitle="Movies you didn't enjoy"
-            icon={<ThumbsDown className="w-4 h-4 text-red-400" />}
-            movies={dislikedMovies}
-          />
-        )}
+
       </div>
 
       <div className="px-6 md:px-10 lg:px-20 grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
@@ -303,7 +296,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {genreDist.slice(0, 8).map((genre: any) => (
                 <div key={genre.name} className="flex items-center gap-3">
-                  <a href={`/movies/genres/${String(genre.name).toLowerCase().replace(/\s+/g, '-')}`} className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate hover:underline">
+                  <a href={`/genre/${String(genre.name).toLowerCase().replace(/\s+/g, '-')}${genre.tmdb_id ? `?id=${genre.tmdb_id}` : ''}`} className="text-[12px] text-white/50 w-24 text-right flex-shrink-0 truncate hover:underline">
                     {genre.name}
                   </a>
                   <div className="flex-1 h-6 bg-surface-3 rounded-lg overflow-hidden">

@@ -28,6 +28,8 @@ function GenreContent() {
     async function fetchMovies() {
       setLoading(true);
       try {
+        // When an id query param is present, prefer server-side genre lookup via id
+        const idParam = genreId ? `?id=${genreId}` : "";
         const data = await genresAPI.getMovies(slug, page);
         setMovies(data.results || []);
         setTotalPages(data.total_pages || 1);
@@ -38,7 +40,7 @@ function GenreContent() {
       }
     }
     fetchMovies();
-  }, [slug, page]);
+  }, [slug, page, genreId]);
 
   return (
     <div className="pt-24 pb-20 px-6 md:px-12 lg:px-20 max-w-[1400px] mx-auto">
