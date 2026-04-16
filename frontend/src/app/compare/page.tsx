@@ -13,7 +13,6 @@ import { posterUrl, formatRuntime, formatCurrency } from "@/lib/utils";
 import type { MovieCompact, TMDBMovieDetail } from "@/types/movie";
 
 // ─── CompareBar ────────────────────────────────────────────────────────────────
-// Moved OUTSIDE ComparePage so React never unmounts/remounts it on re-render.
 
 interface CompareBarProps {
   label: string;
@@ -77,8 +76,6 @@ function CompareBar({ label, valueA, valueB, higher }: CompareBarProps) {
 }
 
 // ─── MovieSelector ─────────────────────────────────────────────────────────────
-// Moved OUTSIDE ComparePage so React never unmounts/remounts it on re-render.
-// Receives `onSearch` as a prop instead of closing over the parent's function.
 
 interface MovieSelectorProps {
   side: "A" | "B";
@@ -207,44 +204,21 @@ export default function ComparePage() {
 
   async function searchMovies(query: string, side: "A" | "B") {
     if (query.length < 2) {
-      if (side === "A") {
-        setResultsA([]);
-      } else {
-        setResultsB([]);
-      }
+      side === "A" ? setResultsA([]) : setResultsB([]);
       return;
     }
 
-    if (side === "A") {
-      setSearchingA(true);
-    } else {
-      setSearchingB(true);
-    }
+    side === "A" ? setSearchingA(true) : setSearchingB(true);
 
     try {
       const data = await moviesAPI.search(query);
-<<<<<<< HEAD
       side === "A"
         ? setResultsA(data.results.slice(0, 5))
         : setResultsB(data.results.slice(0, 5));
-    } catch {}
-    finally {
-      side === "A" ? setSearchingA(false) : setSearchingB(false);
-=======
-      if (side === "A") {
-        setResultsA(data.results.slice(0, 5));
-      } else {
-        setResultsB(data.results.slice(0, 5));
-      }
     } catch {
       // ignore
     } finally {
-      if (side === "A") {
-        setSearchingA(false);
-      } else {
-        setSearchingB(false);
-      }
->>>>>>> 95e76bfa7f21b372070f0b6259fe01f285508cb8
+      side === "A" ? setSearchingA(false) : setSearchingB(false);
     }
   }
 
@@ -331,42 +305,12 @@ export default function ComparePage() {
             Head to Head
           </h2>
 
-          <CompareBar
-            label="Rating"
-            valueA={movieA.vote_average}
-            valueB={movieB.vote_average}
-            higher="higher"
-          />
-          <CompareBar
-            label="Vote Count"
-            valueA={movieA.vote_count}
-            valueB={movieB.vote_count}
-            higher="higher"
-          />
-          <CompareBar
-            label="Popularity"
-            valueA={Math.round(movieA.popularity)}
-            valueB={Math.round(movieB.popularity)}
-            higher="higher"
-          />
-          <CompareBar
-            label="Runtime (min)"
-            valueA={movieA.runtime || 0}
-            valueB={movieB.runtime || 0}
-            higher="higher"
-          />
-          <CompareBar
-            label="Budget"
-            valueA={movieA.budget || 0}
-            valueB={movieB.budget || 0}
-            higher="higher"
-          />
-          <CompareBar
-            label="Revenue"
-            valueA={movieA.revenue || 0}
-            valueB={movieB.revenue || 0}
-            higher="higher"
-          />
+          <CompareBar label="Rating" valueA={movieA.vote_average} valueB={movieB.vote_average} higher="higher" />
+          <CompareBar label="Vote Count" valueA={movieA.vote_count} valueB={movieB.vote_count} higher="higher" />
+          <CompareBar label="Popularity" valueA={Math.round(movieA.popularity)} valueB={Math.round(movieB.popularity)} higher="higher" />
+          <CompareBar label="Runtime (min)" valueA={movieA.runtime || 0} valueB={movieB.runtime || 0} higher="higher" />
+          <CompareBar label="Budget" valueA={movieA.budget || 0} valueB={movieB.budget || 0} higher="higher" />
+          <CompareBar label="Revenue" valueA={movieA.revenue || 0} valueB={movieB.revenue || 0} higher="higher" />
 
           {/* Genres comparison */}
           <div className="mt-6 pt-6 border-t border-white/[0.04]">
