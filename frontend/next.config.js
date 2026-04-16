@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const apiProxyTarget =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:8000/api/:path*"
+    : "https://cinequest.up.railway.app/api/:path*";
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -18,7 +23,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8000/api/:path*",
+        destination: apiProxyTarget,
       },
     ];
   },
