@@ -7,7 +7,7 @@ import {
   TrendingUp, Clock, LogIn, Sparkles, Film, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { recommendationsAPI } from "@/lib/api";
+import { recommendationsAPI, genresAPI } from "@/lib/api";
 import MovieCarousel from "@/components/MovieCarousel";
 import WrappedSlideshow from "@/components/WrappedSlideshow";
 import type { 
@@ -327,9 +327,9 @@ export default function DashboardPage() {
             title="Recent Activity"
             subtitle="Your latest unique movie views"
             icon={<Clock className="w-4 h-4 text-gold" />}
-            movies={Array.from(new Map(recent
+            movies={Array.from(new Map<number, any>(recent
               .filter((r: any) => r.interaction_type === "view")
-              .map((r: any) => [r.movie_tmdb_id, r])
+              .map((r: any) => [r.movie_tmdb_id as number, r] as [number, any])
               .reverse()
             ).values()).map((r: any) => ({
               id: r.id,

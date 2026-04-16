@@ -17,7 +17,7 @@ interface MovieCarouselProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  movies: MovieCompact[];
+  movies: MovieCompact[] | PaginatedResponse<MovieCompact> | null;
   loading?: boolean;
   href?: string;
 }
