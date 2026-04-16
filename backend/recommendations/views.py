@@ -5,11 +5,15 @@ Business logic for the dashboard summary lives in
 ``recommendations.services.dashboard_stats``; this module wires it to DRF.
 """
 
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+
+User = get_user_model()
 
 from .models import UserMovieInteraction, UserGenrePreference, Watchlist
 from .serializers import (
@@ -101,3 +105,18 @@ def dashboard_stats(request):
     Returns aggregated stats for the user's dashboard.
     """
     return Response(build_dashboard_stats(request.user, engine))
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_wrapped(request, token):
+    """
+    GET /api/recommendations/wrapped/{token}/
+    Returns Wrapped stats for a user via their share_token.
+    """
+    user = get_object_or_404(User, share_token=token)
+    stats = build_dashboard_stats(user, engine)
+    wrapped = stats.get("wrapped")
+    if not wrapped:
+        return Response({"detail": "No wrapped data available for this user."}, status=404)
+    return Response(wrapped)

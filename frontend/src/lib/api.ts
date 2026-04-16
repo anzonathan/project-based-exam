@@ -268,4 +268,7 @@ export const recommendationsAPI = {
     apiFetch(`/recommendations/watchlist/${id}/`, { method: "DELETE" }),
 
   getDashboard: () => apiFetch<DashboardStats>("/recommendations/dashboard/"),
+
+  getPublicWrapped: (token: string) =>
+    apiFetch<any>(`/recommendations/wrapped/${token}/`),
 };
