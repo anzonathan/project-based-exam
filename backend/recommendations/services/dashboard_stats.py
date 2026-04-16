@@ -109,10 +109,21 @@ def build_dashboard_stats(user, engine: RecommendationEngine | None = None) -> d
     recent = interactions.order_by("-created_at")[:DASHBOARD_RECENT_INTERACTIONS_LIMIT]
     recent_data = UserMovieInteractionSerializer(recent, many=True).data
 
-    # Detailed lists for mapping to dashboard
-    liked_movies = interactions.filter(interaction_type="like").order_by("-created_at")[:10]
-    disliked_movies = interactions.filter(interaction_type="dislike").order_by("-created_at")[:10]
-    watched_movies = interactions.filter(interaction_type="watched").order_by("-created_at")[:10]
+    # Detailed lists for mapping to dashboard (Deduplicated)
+    def get_unique_movies(qs, limit=10):
+        seen = set()
+        unique = []
+        for item in qs:
+            if item.movie_tmdb_id not in seen:
+                seen.add(item.movie_tmdb_id)
+                unique.append(item)
+                if len(unique) >= limit:
+                    break
+        return unique
+
+    liked_movies = get_unique_movies(interactions.filter(interaction_type="like").order_by("-created_at"))
+    disliked_movies = get_unique_movies(interactions.filter(interaction_type="dislike").order_by("-created_at"))
+    watched_movies = get_unique_movies(interactions.filter(interaction_type="watched").order_by("-created_at"))
     
     # Watchlist items
     from recommendations.serializers import WatchlistSerializer

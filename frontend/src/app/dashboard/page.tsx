@@ -224,23 +224,25 @@ export default function DashboardPage() {
       {/* Watchlist Detailed Stats */}
       {summary.watchlist_total > 0 && (
         <div className="px-6 md:px-10 lg:px-20 mb-10">
-          <div className="glass-card rounded-xl p-4 flex items-center justify-between border-l-4 border-gold">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-gold" />
+          <div className="glass-card rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-4 border-gold shadow-lg shadow-gold/5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-gold" />
+              </div>
               <div>
-                <p className="text-sm font-semibold">Watchlist Progress</p>
-                <p className="text-xs text-white/30">You&apos;ve watched {summary.watchlist_watched} out of {summary.watchlist_total} saved movies.</p>
+                <p className="text-base font-bold font-display">Watchlist Progress</p>
+                <p className="text-sm text-white/40">You&apos;ve watched {summary.watchlist_watched} out of {summary.watchlist_total} saved movies.</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="w-32 h-2 bg-white/5 rounded-full overflow-hidden">
+            <div className="flex items-center gap-5 w-full md:w-auto">
+              <div className="flex-1 md:w-48 h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
                 <div 
-                  className="h-full bg-gold transition-all duration-1000" 
-                  style={{ width: `${(summary.watchlist_watched / summary.watchlist_total) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-gold to-amber-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(212,168,83,0.3)]" 
+                  style={{ width: `${Math.min(100, Math.max(0, (summary.watchlist_watched / summary.watchlist_total) * 100))}%` }}
                 />
               </div>
-              <span className="text-sm font-mono text-gold font-bold">
-                {Math.round((summary.watchlist_watched / summary.watchlist_total) * 100)}%
+              <span className="text-lg font-black font-mono text-gold min-w-[3rem] text-right">
+                {Math.round((summary.watchlist_watched / (summary.watchlist_total || 1)) * 100)}%
               </span>
             </div>
           </div>

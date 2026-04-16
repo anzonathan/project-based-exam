@@ -69,7 +69,16 @@ def track_interaction(request):
     """
     serializer = UserMovieInteractionSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user)
+        interaction = serializer.save(user=request.user)
+        
+        # If marked as watched, sync with watchlist
+        if interaction.interaction_type == UserMovieInteraction.InteractionType.WATCHED:
+            Watchlist.objects.filter(
+                user=request.user, 
+                movie_tmdb_id=interaction.movie_tmdb_id,
+                watched=False
+            ).update(watched=True, watched_at=timezone.now())
+            
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
